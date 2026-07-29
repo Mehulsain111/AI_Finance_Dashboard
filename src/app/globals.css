@@ -1,0 +1,136 @@
+/* Small global polish (kept minimal) */
+:root {
+  color-scheme: light dark;
+  --app-bg-start: #f8fafc;
+  --app-bg-end: #f1f5f9;
+  --app-radius: 1.25rem;
+  --app-radius-sm: 0.9rem;
+  --app-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+  --app-shadow-hover: 0 18px 45px rgba(2, 6, 23, 0.12);
+}
+
+html {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  scroll-behavior: smooth;
+}
+
+[data-bs-theme="dark"] {
+  --app-bg-start: #020617;
+  --app-bg-end: #020617;
+}
+
+.antialiased {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app-body {
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Noto Sans", "Liberation Sans", sans-serif;
+  text-rendering: geometricPrecision;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  background: linear-gradient(to bottom, var(--app-bg-start), var(--app-bg-end));
+  padding-bottom: 2.5rem;
+}
+
+.container-xxl {
+  max-width: 1200px;
+}
+
+.app-header {
+  background-color: color-mix(in srgb, var(--bs-body-bg) 70%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .app-header {
+    background-color: var(--bs-body-bg);
+  }
+}
+
+.app-card {
+  border-radius: var(--app-radius);
+  border: 1px solid color-mix(in srgb, var(--bs-border-color) 70%, transparent);
+  box-shadow: var(--app-shadow);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.app-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--app-shadow-hover);
+}
+
+.app-kpi-label {
+  letter-spacing: 0.08em;
+}
+
+.app-kpi-value {
+  letter-spacing: -0.02em;
+}
+
+.border-dashed {
+  border-style: dashed !important;
+}
+
+.form-control,
+.form-select,
+.btn {
+  border-radius: var(--app-radius-sm);
+}
+
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--bs-primary) 15%, transparent);
+}
+
+@media (min-width: 768px) {
+  .w-md-auto {
+    width: auto !important;
+  }
+}
+
+.app-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.app-table th {
+  white-space: nowrap;
+}
+
+.app-table td {
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+
+.table-responsive {
+  border-radius: var(--app-radius-sm);
+}
+
+.app-chart-box {
+  height: 260px;
+}
+
+@media (min-width: 992px) {
+  .app-chart-box {
+    height: 288px;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Prevent chart text selection when dragging */
+.recharts-wrapper {
+  user-select: none;
+}
+@media (max-width: 555px) {
+  .container-xxl {
+   font-size: small;
+  }
+}
