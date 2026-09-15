@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function AuthPage() {
   return (
-    <main className="position-relative w-100 vh-100 overflow-hidden bg-black">
+    <main className="position-fixed top-0 start-0 w-100 h-100 overflow-hidden bg-black" style={{ zIndex: 50 }}>
       {/* 3D Background Layer */}
       <Auth3DBackground />
 
