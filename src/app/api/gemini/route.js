@@ -54,11 +54,11 @@ export async function POST(request) {
         try {
           return await ai.models.generateContent(options);
         } catch (err) {
-          const isOverloaded = err.status === 503;
+          const isOverloaded = err.status === 503 || err.message?.includes("fetch failed") || err.cause?.code === 'UND_ERR_HEADERS_TIMEOUT';
           const isRateLimited = err.status === 429;
           
           if (isOverloaded || isRateLimited) {
-            console.log(`Gemini ${err.status} on ${model}. Falling back to next...`);
+            console.log(`Gemini ${err.status || 'TIMEOUT'} on ${model}. Falling back to next...`);
             lastError = err;
             // Slightly pause on 503 overload before hammering the next model
             if (isOverloaded) await new Promise(r => setTimeout(r, 500));
@@ -196,8 +196,8 @@ export async function POST(request) {
   } catch (err) {
     console.error("Gemini proxy error:", err);
     let msg = "Upstream Gemini request failed";
-    if (err.status === 503) msg = "Gemini API is temporarily overloaded (503). Please try again in a few seconds.";
-    if (err.status === 429) msg = "Gemini free tier daily quota exceeded for this model (429). Please try again later.";
+    if (err.status === 503 || err.message?.includes("fetch failed")) msg = "Gemini API is temporarily overloaded (503/Timeout). Please try again in a few seconds.";
+    if (err.status === 429) msg = "Gemini free tier daily quota exceeded for all models (429). Please try again later.";
     
     return NextResponse.json(
       { error: msg },

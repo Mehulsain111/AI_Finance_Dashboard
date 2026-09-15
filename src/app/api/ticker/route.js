@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request) {
   const stream = new ReadableStream({
     start(controller) {
       // Send initial data immediately
@@ -8,11 +8,15 @@ export async function GET() {
       
       // Emit mock price updates every 3 seconds
       const interval = setInterval(() => {
-        sendEvent(controller);
+        try {
+          sendEvent(controller);
+        } catch (e) {
+          clearInterval(interval);
+        }
       }, 3000);
 
       // Clean up when client disconnects
-      controller.signal?.addEventListener("abort", () => {
+      request.signal.addEventListener("abort", () => {
         clearInterval(interval);
       });
     },
