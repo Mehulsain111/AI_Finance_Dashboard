@@ -37,7 +37,7 @@ export default function ProfileMenu() {
 
   async function handleLogout() {
     await logout();
-    router.push("/login");
+    router.push("/auth");
     router.refresh();
   }
 

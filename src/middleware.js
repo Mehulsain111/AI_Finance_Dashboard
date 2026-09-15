@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 // Pages that don't require a session. Everything else under the matcher
-// below redirects to /login if there's no valid session cookie.
-const PUBLIC_PATHS = new Set(["/login", "/signup"]);
+// below redirects to /auth if there's no valid session cookie.
+const PUBLIC_PATHS = new Set(["/auth"]);
 
 // Deliberately thin: this only checks whether the JWT is present and
 // correctly signed (no database call), and only decides page-level
@@ -19,7 +19,7 @@ export async function proxy(request) {
 
   if (!isAuthed && !isPublicPath) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/auth";
     return NextResponse.redirect(url);
   }
 
