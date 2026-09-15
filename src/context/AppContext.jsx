@@ -32,6 +32,7 @@ export function AppProvider({ children }) {
     if (authLoading) return;
 
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHydrated(false);
       return;
     }

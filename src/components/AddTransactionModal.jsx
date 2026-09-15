@@ -23,6 +23,7 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
   useEffect(() => {
     if (!open) return;
     if (transaction) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         date: transaction.date ?? today,
         type: transaction.type ?? "expense",
@@ -139,11 +140,37 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
                   </div>
 
                   <div className="col-12">
-                    <label className="form-label small fw-medium">Category</label>
+                    <label className="form-label small fw-medium d-flex justify-content-between">
+                      Category / Description
+                      <button 
+                        type="button" 
+                        className="btn btn-link btn-sm p-0 text-decoration-none d-flex align-items-center gap-1"
+                        onClick={async () => {
+                          if (!form.category) return setError("Enter a description to categorize.");
+                          setError("");
+                          try {
+                            const res = await fetch("/api/gemini", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ action: "categorize", description: form.category }),
+                            });
+                            const json = await res.json();
+                            if (json.error) throw new Error(json.error);
+                            if (json.result) {
+                              update({ category: json.result.category, type: json.result.type });
+                            }
+                          } catch (err) {
+                            setError(err.message);
+                          }
+                        }}
+                      >
+                        <span aria-hidden="true">✨</span> AI Suggest
+                      </button>
+                    </label>
                     <input
                       value={form.category}
                       onChange={(e) => update({ category: e.target.value })}
-                      placeholder="e.g., Groceries"
+                      placeholder="e.g., Groceries or 'Uber ride'"
                       className="form-control"
                       required
                     />

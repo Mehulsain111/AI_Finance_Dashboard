@@ -1,6 +1,7 @@
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppProvider } from "@/context/AppContext";
+import SmoothScrolling from "@/components/SmoothScrolling";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 
@@ -11,7 +12,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -32,7 +33,11 @@ export default function RootLayout({ children }) {
           `}
         </Script>
         <AuthProvider>
-          <AppProvider>{children}</AppProvider>
+          <AppProvider>
+            <SmoothScrolling>
+              {children}
+            </SmoothScrolling>
+          </AppProvider>
         </AuthProvider>
       </body>
     </html>

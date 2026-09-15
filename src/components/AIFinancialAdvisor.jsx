@@ -4,21 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import Card from "./Card";
 import EmptyState from "./EmptyState";
+import PredictiveWealthForecast from "./PredictiveWealthForecast";
+import FinancialHealthScorecard from "./FinancialHealthScorecard";
+import SkeletonLoader from "./SkeletonLoader";
 
-/**
- * Calls our own Next.js API route (app/api/gemini/route.js), which calls
- * Gemini server-side. The API key never reaches the browser -- this is the
- * secure counterpart to the direct-from-the-browser version this component
- * used in the Vite build.
- *
- * @param {Array<Object>} financialData - raw transaction/expense records
- * @returns {Promise<string>} markdown text with the advisor's recommendations
- */
 async function getAIInsights(financialData) {
   const res = await fetch("/api/gemini", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ financialData }),
+    body: JSON.stringify({ action: "advisor", financialData }),
   });
 
   if (!res.ok) {
@@ -26,51 +20,29 @@ async function getAIInsights(financialData) {
     throw new Error(body.error || `Request failed with status ${res.status}`);
   }
 
-  const { text } = await res.json();
-  if (!text) throw new Error("Gemini returned an empty response.");
-  return text;
+  const json = await res.json();
+  if (!json.result) throw new Error("Gemini returned an empty response.");
+  return json.result;
 }
 
-// Minimal, dependency-free markdown -> Bootstrap-styled JSX mapping.
-// Rendering via react-markdown (rather than dangerouslySetInnerHTML on raw
-// HTML from the model) avoids an XSS vector -- see the note below the
-// component for details.
 const markdownComponents = {
   p: ({ children }) => <p className="mb-2">{children}</p>,
-  strong: ({ children }) => <strong className="fw-semibold">{children}</strong>,
+  strong: ({ children }) => <strong className="fw-semibold text-primary">{children}</strong>,
   ul: ({ children }) => <ul className="ps-3 mb-0 d-flex flex-column gap-2">{children}</ul>,
   ol: ({ children }) => <ol className="ps-3 mb-0 d-flex flex-column gap-2">{children}</ol>,
-  li: ({ children }) => <li>{children}</li>,
-  h1: ({ children }) => <h3 className="h6 fw-semibold mb-2">{children}</h3>,
-  h2: ({ children }) => <h3 className="h6 fw-semibold mb-2">{children}</h3>,
-  h3: ({ children }) => <h3 className="h6 fw-semibold mb-2">{children}</h3>,
+  li: ({ children }) => <li style={{listStyleType: "none", position: "relative"}}><span className="text-primary me-2 fw-bold">›</span>{children}</li>,
+  h1: ({ children }) => <h3 className="h6 fw-semibold mb-2 mt-3">{children}</h3>,
+  h2: ({ children }) => <h3 className="h6 fw-semibold mb-2 mt-3">{children}</h3>,
+  h3: ({ children }) => <h3 className="h6 fw-semibold mb-2 mt-3">{children}</h3>,
 };
 
-function LoadingSkeleton() {
-  return (
-    <div>
-      <span className="visually-hidden">Loading AI insights…</span>
-      <p className="placeholder-glow mb-2">
-        <span className="placeholder col-8 rounded-2" />
-      </p>
-      <p className="placeholder-glow mb-2">
-        <span className="placeholder col-12 rounded-2" />
-      </p>
-      <p className="placeholder-glow mb-2">
-        <span className="placeholder col-10 rounded-2" />
-      </p>
-      <p className="placeholder-glow mb-0">
-        <span className="placeholder col-6 rounded-2" />
-      </p>
-    </div>
-  );
-}
+
 
 function ErrorState({ message, onRetry }) {
   return (
-    <div className="text-center py-2">
+    <div className="text-center py-4">
       <p className="text-danger small mb-3">{message}</p>
-      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onRetry}>
+      <button type="button" className="btn btn-sm btn-outline-primary" onClick={onRetry}>
         Try again
       </button>
     </div>
@@ -80,7 +52,8 @@ function ErrorState({ message, onRetry }) {
 export default function AIFinancialAdvisor({ financialData }) {
   const hasData = Array.isArray(financialData) && financialData.length > 0;
 
-  const [status, setStatus] = useState(() => (hasData ? "loading" : "idle")); // idle | loading | success | error
+  const [activeTab, setActiveTab] = useState("advisor"); // advisor | forecast | risk
+  const [status, setStatus] = useState(() => (hasData ? "loading" : "idle"));
   const [insight, setInsight] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const latestRequestId = useRef(0);
@@ -94,7 +67,7 @@ export default function AIFinancialAdvisor({ financialData }) {
 
     try {
       const text = await getAIInsights(financialData);
-      if (requestId !== latestRequestId.current) return; // a newer request won the race
+      if (requestId !== latestRequestId.current) return;
       setInsight(text);
       setStatus("success");
     } catch (err) {
@@ -106,46 +79,80 @@ export default function AIFinancialAdvisor({ financialData }) {
   }, [financialData]);
 
   useEffect(() => {
-    runAnalysis();
-  }, [runAnalysis]);
+    if (activeTab === "advisor") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      runAnalysis();
+    }
+  }, [runAnalysis, activeTab]);
 
   return (
-    <Card
-      title={
-        <span>
-          AI Insights <span aria-hidden="true">✨</span>
-        </span>
-      }
-      subtitle="Personalized recommendations from your transaction history"
-      actions={
-        hasData && status !== "loading" ? (
+    <div className="app-card overflow-hidden">
+      <div className="d-flex align-items-center justify-content-between p-3 border-bottom border-secondary border-opacity-10" style={{ background: "color-mix(in srgb, var(--bs-body-bg) 40%, transparent)" }}>
+        <h5 className="mb-0 fw-bold fs-6 d-flex align-items-center gap-2">
+          AI Command Center <span aria-hidden="true">✨</span>
+        </h5>
+        {activeTab === "advisor" && hasData && status !== "loading" && (
           <button
             type="button"
-            className="btn btn-sm btn-outline-secondary"
+            className="btn btn-sm btn-outline-primary rounded-pill px-3"
             onClick={runAnalysis}
-            aria-label="Regenerate AI insights"
           >
             Regenerate
           </button>
-        ) : null
-      }
-    >
-      {!hasData ? (
-        <EmptyState
-          title="No data to analyze yet"
-          hint="Add a few transactions and check back for personalized saving recommendations."
-        />
-      ) : (
-        <div aria-live="polite" aria-atomic="true">
-          {status === "loading" && <LoadingSkeleton />}
-          {status === "error" && <ErrorState message={errorMessage} onRetry={runAnalysis} />}
-          {status === "success" && (
-            <div className="small">
-              <ReactMarkdown components={markdownComponents}>{insight}</ReactMarkdown>
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
+        )}
+      </div>
+
+      <div className="d-flex border-bottom border-secondary border-opacity-10 px-3">
+        {["advisor", "forecast", "risk"].map((tab) => (
+          <button
+            key={tab}
+            className={`btn btn-link text-decoration-none px-4 py-3 fw-medium ${activeTab === tab ? "text-primary border-bottom border-2 border-primary rounded-0" : "text-body-secondary"}`}
+            onClick={() => setActiveTab(tab)}
+            style={{ marginBottom: "-1px" }}
+          >
+            {tab === "advisor" && "General Advice"}
+            {tab === "forecast" && "Wealth Forecast"}
+            {tab === "risk" && "Risk Audit"}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-0">
+        {!hasData ? (
+          <div className="p-4">
+             <EmptyState
+              title="No data to analyze yet"
+              hint="Add a few transactions and check back for personalized saving recommendations."
+            />
+          </div>
+        ) : (
+          <div aria-live="polite" aria-atomic="true" style={{ minHeight: "300px" }}>
+            {activeTab === "advisor" && (
+              <div className="p-4">
+                {status === "loading" && <SkeletonLoader />}
+                {status === "error" && <ErrorState message={errorMessage} onRetry={runAnalysis} />}
+                {status === "success" && (
+                  <div className="fs-6 lh-lg text-body-secondary">
+                    <ReactMarkdown components={markdownComponents}>{insight}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "forecast" && (
+              <div className="p-4 bg-black bg-opacity-10 h-100 w-100">
+                <PredictiveWealthForecast transactions={financialData} />
+              </div>
+            )}
+
+            {activeTab === "risk" && (
+              <div className="p-4 bg-black bg-opacity-10 h-100 w-100">
+                <FinancialHealthScorecard transactions={financialData} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

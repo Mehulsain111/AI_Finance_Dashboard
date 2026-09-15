@@ -1,23 +1,8 @@
 // app/api/gemini/route.js
-//
-// Server-side proxy for the Gemini call, in App Router "Route Handler" form.
-// This file is automatically exposed at POST /api/gemini -- no extra config
-// needed. Converted from the old Vercel serverless function:
-//   - `export default function handler(req, res)`  -->  `export async function POST(request)`
-//   - `req.body` (pre-parsed)                       -->  `await request.json()`
-//   - `res.status(n).json(obj)`                      -->  `NextResponse.json(obj, { status: n })`
-//
-// Set GEMINI_API_KEY in .env.local for local dev, and in your host's
-// environment variables (e.g. Vercel Project Settings -> Environment
-// Variables) for deployment. Do NOT prefix it with NEXT_PUBLIC_ -- that
-// prefix is what tells Next.js to inline a variable into the public client
-// bundle, which is exactly what we're avoiding here.
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
-
-const SYSTEM_INSTRUCTION = "You are an expert financial advisor.";
 
 export async function POST(request) {
   const userId = await getSessionUserId();
@@ -33,38 +18,183 @@ export async function POST(request) {
     );
   }
 
-  let financialData;
+  let body;
   try {
-    ({ financialData } = await request.json());
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!Array.isArray(financialData) || financialData.length === 0) {
+  const { action = "advisor", financialData, query = "" } = body;
+
+  if (action !== "categorize" && (!Array.isArray(financialData) || financialData.length === 0)) {
     return NextResponse.json(
-      { error: "financialData must be a non-empty array" },
+      { error: "financialData must be a non-empty array for analysis" },
       { status: 400 },
     );
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey });
+    let response;
+    
+    // Helper to retry and fallback to older models if 503 or 429
+    async function generateWithRetry(options, retries = 2) {
+      for (let i = 0; i <= retries; i++) {
+        try {
+          return await ai.models.generateContent(options);
+        } catch (err) {
+          const isOverloaded = err.status === 503;
+          const isRateLimited = err.status === 429;
+          
+          if ((isOverloaded || isRateLimited) && i < retries) {
+            console.log(`Gemini ${err.status} on ${options.model}. Retrying... (${i + 1}/${retries})`);
+            
+            // If we hit a rate limit (429), instantly switch models and try again.
+            // If it's a 503 overload, wait a bit before retrying.
+            if (isRateLimited || i === retries - 1) {
+              options.model = 'gemini-3.5-flash';
+            } else {
+              await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+            }
+            continue;
+          }
+          throw err;
+        }
+      }
+    }
+    
+    // Switch on the action type
+    switch (action) {
+      case "advisor": {
+        const prompt = `I am providing you with the user's raw financial data in JSON format: ${JSON.stringify(financialData)}. Analyze this data and provide exactly 3 short, highly personalized, and actionable saving recommendations. Highlight the biggest area of overspending. Return the response in clean markdown format.`;
+        response = await generateWithRetry({
+          model: "gemini-3.6-flash",
+          contents: prompt,
+          config: { systemInstruction: "You are an expert financial advisor." },
+        });
+        return NextResponse.json({ result: response.text });
+      }
 
-    const prompt = `I am providing you with the user's raw financial data in JSON format: ${JSON.stringify(
-      financialData,
-    )}. Analyze this data and provide exactly 3 short, highly personalized, and actionable saving recommendations. Highlight the biggest area of overspending. Return the response in clean markdown format.`;
+      case "forecast": {
+        // Output structured data: array of monthly projections
+        const prompt = `Based on the following transaction history: ${JSON.stringify(financialData)}, project the user's total balance for the next 6 months. Take into account their average monthly income and expenses. Return a realistic projection.`;
+        response = await generateWithRetry({
+          model: "gemini-3.6-flash",
+          contents: prompt,
+          config: {
+            systemInstruction: "You are a quantitative financial analyst. Produce realistic wealth forecasts.",
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  month: { type: Type.STRING, description: "Month name, e.g., 'Oct'" },
+                  projectedBalance: { type: Type.NUMBER, description: "The expected balance" },
+                  bestCase: { type: Type.NUMBER, description: "Optimistic projection" },
+                  worstCase: { type: Type.NUMBER, description: "Pessimistic projection" }
+                },
+                required: ["month", "projectedBalance", "bestCase", "worstCase"]
+              }
+            }
+          }
+        });
+        return NextResponse.json({ result: JSON.parse(response.text) });
+      }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: prompt,
-      config: { systemInstruction: SYSTEM_INSTRUCTION },
-    });
+      case "query": {
+        // NLP Expense Querying
+        const prompt = `User query: "${query}". Based on this transaction history: ${JSON.stringify(financialData)}, answer the query concisely. In your response, include a natural language answer, and if applicable, an array of the transaction IDs that match the query so we can highlight them.`;
+        response = await generateWithRetry({
+          model: "gemini-3.6-flash",
+          contents: prompt,
+          config: {
+            systemInstruction: "You are a helpful financial assistant answering questions about user transactions.",
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                answer: { type: Type.STRING, description: "Natural language answer" },
+                matchedTransactionIds: { 
+                  type: Type.ARRAY, 
+                  items: { type: Type.STRING },
+                  description: "IDs of transactions matching the query, if any."
+                }
+              },
+              required: ["answer", "matchedTransactionIds"]
+            }
+          }
+        });
+        return NextResponse.json({ result: JSON.parse(response.text) });
+      }
 
-    return NextResponse.json({ text: response.text });
+      case "risk": {
+        const prompt = `Analyze this transaction history for risks, subscription traps, or unusual spending: ${JSON.stringify(financialData)}. Provide an overall health score (0-100) and list specific alerts.`;
+        response = await generateWithRetry({
+          model: "gemini-3.6-flash",
+          contents: prompt,
+          config: {
+            systemInstruction: "You are an automated risk and anomaly detection system for personal finance.",
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                healthScore: { type: Type.INTEGER, description: "Score from 0 to 100" },
+                alerts: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      title: { type: Type.STRING },
+                      description: { type: Type.STRING },
+                      severity: { type: Type.STRING, enum: ["low", "medium", "high"] }
+                    },
+                    required: ["title", "description", "severity"]
+                  }
+                }
+              },
+              required: ["healthScore", "alerts"]
+            }
+          }
+        });
+        return NextResponse.json({ result: JSON.parse(response.text) });
+      }
+
+      case "categorize": {
+        const { description } = body;
+        const prompt = `Given the transaction description "${description}", suggest a category (e.g., Groceries, Utilities, Entertainment, Dining, Transportation, Health, Income) and whether it's likely an 'income' or 'expense'.`;
+        response = await generateWithRetry({
+          model: "gemini-3.6-flash",
+          contents: prompt,
+          config: {
+            systemInstruction: "You categorize transactions automatically.",
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                category: { type: Type.STRING },
+                type: { type: Type.STRING, enum: ["income", "expense"] }
+              },
+              required: ["category", "type"]
+            }
+          }
+        });
+        return NextResponse.json({ result: JSON.parse(response.text) });
+      }
+
+      default:
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
+
   } catch (err) {
     console.error("Gemini proxy error:", err);
+    let msg = "Upstream Gemini request failed";
+    if (err.status === 503) msg = "Gemini API is temporarily overloaded (503). Please try again in a few seconds.";
+    if (err.status === 429) msg = "Gemini free tier daily quota exceeded for this model (429). Please try again later.";
+    
     return NextResponse.json(
-      { error: "Upstream Gemini request failed" },
+      { error: msg },
       { status: 502 },
     );
   }

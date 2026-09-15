@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshUser().finally(() => setAuthLoading(false));
   }, [refreshUser]);
 

@@ -67,7 +67,14 @@ export default function LoginPage() {
               disabled={submitting}
               className="w-100 justify-content-center"
             >
-              {submitting ? "Logging in..." : "Log In"}
+              {submitting ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Logging in...
+                </>
+              ) : (
+                "Log In"
+              )}
             </Button>
           </form>
 

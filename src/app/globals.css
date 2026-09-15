@@ -1,22 +1,37 @@
-/* Small global polish (kept minimal) */
+/* Modern Fintech Design System */
 :root {
   color-scheme: light dark;
+  
+  /* Background gradients */
   --app-bg-start: #f8fafc;
   --app-bg-end: #f1f5f9;
-  --app-radius: 1.25rem;
-  --app-radius-sm: 0.9rem;
-  --app-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
-  --app-shadow-hover: 0 18px 45px rgba(2, 6, 23, 0.12);
+  
+  /* Card aesthetics */
+  --app-card-bg: rgba(255, 255, 255, 0.7);
+  --app-card-border: rgba(255, 255, 255, 0.5);
+  
+  /* Radii & Shadows */
+  --app-radius: 1.5rem;
+  --app-radius-sm: 1rem;
+  --app-shadow: 0 10px 40px -10px rgba(2, 6, 23, 0.08);
+  --app-shadow-hover: 0 20px 40px -10px rgba(2, 6, 23, 0.12), 0 0 20px rgba(59, 130, 246, 0.1);
+  
+  /* Accents */
+  --app-accent-glow: rgba(59, 130, 246, 0.5);
 }
 
 html {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  scroll-behavior: smooth;
 }
 
 [data-bs-theme="dark"] {
-  --app-bg-start: #020617;
-  --app-bg-end: #020617;
+  --app-bg-start: #0a0a0f;
+  --app-bg-end: #12121c;
+  --app-card-bg: rgba(20, 20, 30, 0.5);
+  --app-card-border: rgba(255, 255, 255, 0.08);
+  --app-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+  --app-shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 25px var(--glow-color, rgba(59, 130, 246, 0.15));
+  --app-accent-glow: rgba(96, 165, 250, 0.6);
 }
 
 .antialiased {
@@ -24,25 +39,59 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Base Body */
 .app-body {
   min-height: 100vh;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial,
-    "Noto Sans", "Liberation Sans", sans-serif;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif;
   text-rendering: geometricPrecision;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-  background: linear-gradient(to bottom, var(--app-bg-start), var(--app-bg-end));
+  line-height: 1.6;
+  letter-spacing: -0.015em;
+  background: linear-gradient(135deg, var(--app-bg-start), var(--app-bg-end));
+  background-attachment: fixed;
   padding-bottom: 2.5rem;
+  position: relative;
+}
+
+/* Ambient glow background effect */
+.app-body::before {
+  content: "";
+  position: fixed;
+  top: -20%;
+  left: -10%;
+  width: 50vw;
+  height: 50vh;
+  background: radial-gradient(circle, var(--app-accent-glow) 0%, transparent 60%);
+  filter: blur(100px);
+  opacity: 0.15;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.app-body::after {
+  content: "";
+  position: fixed;
+  bottom: -20%;
+  right: -10%;
+  width: 60vw;
+  height: 60vh;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 60%);
+  filter: blur(120px);
+  opacity: 0.1;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .container-xxl {
-  max-width: 1200px;
+  max-width: 1280px;
 }
 
+/* Glassmorphism Header */
 .app-header {
-  background-color: color-mix(in srgb, var(--bs-body-bg) 70%, transparent);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
+  background-color: var(--app-card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--app-card-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
 }
 
 @supports not (backdrop-filter: blur(1px)) {
@@ -51,45 +100,86 @@ html {
   }
 }
 
+/* Glassmorphism Cards */
 .app-card {
+  background: var(--app-card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: var(--app-radius);
-  border: 1px solid color-mix(in srgb, var(--bs-border-color) 70%, transparent);
+  border: 1px solid var(--app-card-border);
   box-shadow: var(--app-shadow);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: all 300ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Subtle inner glow for dark mode cards */
+[data-bs-theme="dark"] .app-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  z-index: 1;
 }
 
 .app-card:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--app-shadow-hover);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 20px 40px -10px rgba(2, 6, 23, 0.12), 0 0 20px var(--glow-color, rgba(59, 130, 246, 0.1));
+  border-color: color-mix(in srgb, var(--glow-color, var(--bs-primary)) 50%, var(--app-card-border));
 }
 
+/* Typography refinements */
 .app-kpi-label {
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.8;
 }
 
 .app-kpi-value {
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  font-weight: 700;
 }
 
-.border-dashed {
-  border-style: dashed !important;
-}
-
+/* Form controls */
 .form-control,
 .form-select,
 .btn {
   border-radius: var(--app-radius-sm);
+  transition: all 200ms ease;
+}
+
+.form-control, .form-select {
+  background-color: color-mix(in srgb, var(--bs-body-bg) 50%, transparent);
+  border: 1px solid var(--app-card-border);
 }
 
 .form-control:focus,
 .form-select:focus {
-  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--bs-primary) 15%, transparent);
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--bs-primary) 20%, transparent);
+  border-color: var(--bs-primary);
+  background-color: var(--bs-body-bg);
 }
 
-@media (min-width: 768px) {
-  .w-md-auto {
-    width: auto !important;
-  }
+.btn-primary {
+  background: linear-gradient(135deg, var(--bs-primary), color-mix(in srgb, var(--bs-primary) 80%, black));
+  border: none;
+  box-shadow: 0 4px 15px color-mix(in srgb, var(--bs-primary) 30%, transparent);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--bs-primary) 40%, transparent);
+  transform: translateY(-1px);
+}
+
+/* Tables */
+.app-table {
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
 }
 
 .app-table thead {
@@ -100,24 +190,56 @@ html {
 
 .app-table th {
   white-space: nowrap;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bs-secondary);
+  border: none !important;
+  background: transparent !important;
 }
 
 .app-table td {
-  padding-top: 0.9rem;
-  padding-bottom: 0.9rem;
+  padding: 1.25rem 1rem;
+  background: color-mix(in srgb, var(--bs-body-bg) 40%, transparent);
+  border-top: 1px solid var(--app-card-border) !important;
+  border-bottom: 1px solid var(--app-card-border) !important;
+  vertical-align: middle;
+}
+
+.app-table td:first-child {
+  border-left: 1px solid var(--app-card-border) !important;
+  border-top-left-radius: var(--app-radius-sm);
+  border-bottom-left-radius: var(--app-radius-sm);
+}
+
+.app-table td:last-child {
+  border-right: 1px solid var(--app-card-border) !important;
+  border-top-right-radius: var(--app-radius-sm);
+  border-bottom-right-radius: var(--app-radius-sm);
+}
+
+.app-table tbody tr {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.app-table tbody tr:hover {
+  transform: scale(1.005);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  z-index: 1;
+  position: relative;
 }
 
 .table-responsive {
   border-radius: var(--app-radius-sm);
 }
 
+/* Charts */
 .app-chart-box {
-  height: 260px;
+  height: 280px;
 }
 
 @media (min-width: 992px) {
   .app-chart-box {
-    height: 288px;
+    height: 320px;
   }
 }
 
@@ -125,12 +247,28 @@ html {
   font-variant-numeric: tabular-nums;
 }
 
-/* Prevent chart text selection when dragging */
 .recharts-wrapper {
   user-select: none;
 }
+
 @media (max-width: 555px) {
   .container-xxl {
-   font-size: small;
+   font-size: 0.9rem;
   }
+}
+
+/* Custom Scrollbar for sleekness */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--bs-secondary) 30%, transparent);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bs-secondary);
 }
