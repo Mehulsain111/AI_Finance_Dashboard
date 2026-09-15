@@ -10,7 +10,7 @@ const PUBLIC_PATHS = new Set(["/auth"]);
 // redirects. Every API route that actually touches data (src/app/api/user/*,
 // src/app/api/gemini) re-verifies the session and re-derives userId itself
 // -- proxy.js is a first pass, not the only check.
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const payload = await verifySessionToken(token);
