@@ -42,8 +42,8 @@ export async function PUT(request) {
 
   // Only ever update fields that were actually sent, and only if they're
   // well-formed -- never trust the shape of the request body blindly.
+  // SECURITY FIX: Removed `role` update to prevent privilege escalation (IDOR).
   const update = {};
-  if (body.role === "viewer" || body.role === "admin") update.role = body.role;
   if (typeof body.darkMode === "boolean") update.darkMode = body.darkMode;
   if (Array.isArray(body.transactions)) {
     update.transactions = body.transactions

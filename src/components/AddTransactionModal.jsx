@@ -16,6 +16,7 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
   const { role, rawTransactions, setTransactions } = useApp();
   const [form, setForm] = useState(DEFAULT_FORM);
   const [error, setError] = useState("");
+  const [isCategorizing, setIsCategorizing] = useState(false);
   const isEditing = Boolean(transaction);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -145,9 +146,11 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
                       <button 
                         type="button" 
                         className="btn btn-link btn-sm p-0 text-decoration-none d-flex align-items-center gap-1"
+                        disabled={isCategorizing}
                         onClick={async () => {
                           if (!form.category) return setError("Enter a description to categorize.");
                           setError("");
+                          setIsCategorizing(true);
                           try {
                             const res = await fetch("/api/gemini", {
                               method: "POST",
@@ -161,10 +164,17 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
                             }
                           } catch (err) {
                             setError(err.message);
+                          } finally {
+                            setIsCategorizing(false);
                           }
                         }}
                       >
-                        <span aria-hidden="true">✨</span> AI Suggest
+                        {isCategorizing ? (
+                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        ) : (
+                          <span aria-hidden="true">✨</span>
+                        )}
+                        AI Suggest
                       </button>
                     </label>
                     <input

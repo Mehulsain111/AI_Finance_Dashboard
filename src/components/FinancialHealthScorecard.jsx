@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Card from "./Card";
+import SkeletonLoader from "./SkeletonLoader";
 import { AlertTriangle, ShieldCheck, Info } from "lucide-react";
 
 export default function FinancialHealthScorecard({ transactions }) {
@@ -28,6 +29,7 @@ export default function FinancialHealthScorecard({ transactions }) {
       setData(json.result);
     } catch (err) {
       setError(err.message);
+      fetchRef.current = false; // Allow retrying on error
     } finally {
       setLoading(false);
     }
@@ -42,8 +44,13 @@ export default function FinancialHealthScorecard({ transactions }) {
 
   return (
     <Card title="Financial Health Audit" subtitle="AI Anomaly & Risk Detection">
-      {loading && <div className="text-secondary small">Scanning for anomalies...</div>}
-      {error && <div className="text-danger small">{error}</div>}
+      {loading && <SkeletonLoader lines={4} />}
+      {error && (
+        <div className="d-flex flex-column align-items-start gap-2">
+          <div className="text-danger small">{error}</div>
+          <button className="btn btn-sm btn-outline-danger" onClick={() => { setError(""); fetchRef.current = false; fetchRisk(); }}>Retry</button>
+        </div>
+      )}
 
       {!loading && !error && data && (
         <div className="d-flex flex-column gap-3">

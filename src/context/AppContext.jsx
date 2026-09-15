@@ -66,23 +66,32 @@ export function AppProvider({ children }) {
   // These wait for the load above to finish, so they don't fire on mount (or
   // right after logging in) with the starting defaults and overwrite what's
   // actually saved.
+  // State rollback reference
+  const previousTransactions = React.useRef(transactions);
+  
   useEffect(() => {
     if (!hydrated) return;
+    
+    let cancelled = false;
     fetch("/api/user/data", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ transactions }),
-    }).catch((err) => console.error("Failed to save transactions:", err));
+    })
+    .then((res) => {
+      if (!res.ok) throw new Error("Server rejected data save");
+      if (!cancelled) previousTransactions.current = transactions;
+    })
+    .catch((err) => {
+      console.error("Failed to save transactions:", err);
+      if (!cancelled) {
+        alert("Failed to save data. Changes reverted.");
+        setTransactions(previousTransactions.current);
+      }
+    });
+    
+    return () => { cancelled = true; };
   }, [hydrated, transactions]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    fetch("/api/user/data", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role }),
-    }).catch((err) => console.error("Failed to save role:", err));
-  }, [hydrated, role]);
 
   useEffect(() => {
     if (!hydrated) return;

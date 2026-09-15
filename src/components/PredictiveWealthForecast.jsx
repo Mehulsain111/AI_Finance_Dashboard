@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import Card from "./Card";
+import SkeletonLoader from "./SkeletonLoader";
 
 export default function PredictiveWealthForecast({ transactions }) {
   const [data, setData] = useState([]);
@@ -28,6 +29,7 @@ export default function PredictiveWealthForecast({ transactions }) {
       setData(json.result || []);
     } catch (err) {
       setError(err.message);
+      fetchRef.current = false; // Allow retrying on error
     } finally {
       setLoading(false);
     }
@@ -42,8 +44,13 @@ export default function PredictiveWealthForecast({ transactions }) {
 
   return (
     <Card title="AI Wealth Forecast" subtitle="Projected balance over the next 6 months">
-      {loading && <div className="text-secondary small">Generating AI scenario...</div>}
-      {error && <div className="text-danger small">{error}</div>}
+      {loading && <SkeletonLoader lines={6} />}
+      {error && (
+        <div className="d-flex flex-column align-items-start gap-2">
+          <div className="text-danger small">{error}</div>
+          <button className="btn btn-sm btn-outline-danger" onClick={() => { setError(""); fetchRef.current = false; fetchForecast(); }}>Retry</button>
+        </div>
+      )}
       
       {!loading && !error && data.length > 0 && (
         <div style={{ height: "260px" }}>

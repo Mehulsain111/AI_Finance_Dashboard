@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, Text, useCursor, Float, MeshDistortMaterial, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
@@ -10,11 +10,38 @@ function CreditCardMesh({ name, balance }) {
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
 
+  // Memoize materials to prevent recreation and WebGL memory leaks
+  const materials = useMemo(() => ({
+    card: new THREE.MeshStandardMaterial({
+      color: hovered ? "#1e293b" : "#0f172a",
+      metalness: 0.9,
+      roughness: 0.2,
+      envMapIntensity: 2.5
+    }),
+    chip: new THREE.MeshStandardMaterial({
+      color: "#fbbf24",
+      metalness: 1,
+      roughness: 0.1
+    }),
+    glowBlue: new THREE.MeshPhysicalMaterial({
+      color: "#3b82f6", metalness: 0.5, roughness: 0.1, transmission: 0.9, thickness: 0.5
+    }),
+    glowRed: new THREE.MeshPhysicalMaterial({
+      color: "#ef4444", metalness: 0.5, roughness: 0.1, transmission: 0.9, thickness: 0.5
+    })
+  }), [hovered]);
+
+  // Clean up materials on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(materials).forEach(m => m.dispose());
+    };
+  }, [materials]);
+
   // Animate parallax tilt on mouse move
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
     if (meshRef.current) {
-      // Base float + mouse parallax
       meshRef.current.rotation.x = THREE.MathUtils.lerp(
         meshRef.current.rotation.x,
         (state.pointer.y * Math.PI) / 10,
@@ -31,14 +58,7 @@ function CreditCardMesh({ name, balance }) {
   return (
     <group ref={meshRef} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
       {/* Main Card Body */}
-      <RoundedBox args={[3.4, 2.1, 0.05]} radius={0.1} smoothness={4} castShadow receiveShadow>
-        <meshStandardMaterial 
-          color={hovered ? "#1e293b" : "#0f172a"} 
-          metalness={0.9} 
-          roughness={0.2} 
-          envMapIntensity={2.5} 
-        />
-      </RoundedBox>
+      <RoundedBox args={[3.4, 2.1, 0.05]} radius={0.1} smoothness={4} castShadow receiveShadow material={materials.card} />
 
       {/* Holographic Chip */}
       <mesh position={[-1.2, 0.4, 0.03]} castShadow>
@@ -47,13 +67,11 @@ function CreditCardMesh({ name, balance }) {
       </mesh>
       
       {/* Holographic / Glowing Accents */}
-      <mesh position={[1.2, -0.6, 0.03]}>
+      <mesh position={[1.2, -0.6, 0.03]} material={materials.glowBlue}>
         <circleGeometry args={[0.25, 32]} />
-        <meshPhysicalMaterial color="#3b82f6" metalness={0.5} roughness={0.1} transmission={0.9} thickness={0.5} />
       </mesh>
-      <mesh position={[0.85, -0.6, 0.03]}>
+      <mesh position={[0.85, -0.6, 0.03]} material={materials.glowRed}>
         <circleGeometry args={[0.25, 32]} />
-        <meshPhysicalMaterial color="#ef4444" metalness={0.5} roughness={0.1} transmission={0.9} thickness={0.5} />
       </mesh>
 
       {/* Text overlays */}
