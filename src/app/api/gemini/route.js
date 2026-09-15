@@ -38,30 +38,36 @@ export async function POST(request) {
     const ai = new GoogleGenAI({ apiKey });
     let response;
     
-    // Helper to retry and fallback to older models if 503 or 429
-    async function generateWithRetry(options, retries = 2) {
-      for (let i = 0; i <= retries; i++) {
+    // Helper to retry and fallback through available models on 503 or 429
+    const FALLBACK_MODELS = [
+      "gemini-3.6-flash", 
+      "gemini-3.7-flash",
+      "gemini-3.8-flash",
+      "gemini-3.5-flash",
+      "gemini-3.1-flash-lite"
+    ];
+
+    async function generateWithRetry(options) {
+      let lastError;
+      for (const model of FALLBACK_MODELS) {
+        options.model = model;
         try {
           return await ai.models.generateContent(options);
         } catch (err) {
           const isOverloaded = err.status === 503;
           const isRateLimited = err.status === 429;
           
-          if ((isOverloaded || isRateLimited) && i < retries) {
-            console.log(`Gemini ${err.status} on ${options.model}. Retrying... (${i + 1}/${retries})`);
-            
-            // If we hit a rate limit (429), instantly switch models and try again.
-            // If it's a 503 overload, wait a bit before retrying.
-            if (isRateLimited || i === retries - 1) {
-              options.model = 'gemini-3.5-flash';
-            } else {
-              await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-            }
+          if (isOverloaded || isRateLimited) {
+            console.log(`Gemini ${err.status} on ${model}. Falling back to next...`);
+            lastError = err;
+            // Slightly pause on 503 overload before hammering the next model
+            if (isOverloaded) await new Promise(r => setTimeout(r, 500));
             continue;
           }
           throw err;
         }
       }
+      throw lastError; // Throw if all models in the array are exhausted
     }
     
     // Switch on the action type
