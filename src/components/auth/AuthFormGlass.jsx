@@ -71,7 +71,7 @@ export default function AuthFormGlass() {
             color: "#f8fafc"
           }}
         >
-          <div className="card-body p-4 p-sm-5">
+          <div className="card-body p-4">
             <div className="text-center mb-4">
               <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-25 mb-3" style={{ width: 60, height: 60 }}>
                 <Lock className="text-primary" size={28} />
@@ -174,7 +174,7 @@ export default function AuthFormGlass() {
               </button>
             </form>
 
-            <div className="d-flex align-items-center my-4">
+            <div className="d-flex align-items-center my-3">
               <hr className="flex-grow-1 border-secondary opacity-25" />
               <span className="mx-3 text-white-50 small">OR</span>
               <hr className="flex-grow-1 border-secondary opacity-25" />
@@ -203,7 +203,7 @@ export default function AuthFormGlass() {
               </button>
             </div>
 
-            <div className="text-center mt-4">
+            <div className="text-center mt-3 mb-0">
               <button 
                 onClick={() => { setIsLogin(!isLogin); setError(""); }}
                 className="btn btn-link text-white-50 text-decoration-none small p-0"
