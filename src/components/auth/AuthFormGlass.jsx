@@ -26,7 +26,7 @@ export default function AuthFormGlass() {
 
   const passScore = calculateStrength(form.password);
   const passColor = passScore < 2 ? "#ef4444" : passScore < 3 ? "#eab308" : "#10b981";
-  const passWidth = form.password ? \`\${(passScore / 4) * 100}%\` : "0%";
+  const passWidth = form.password ? `${(passScore / 4) * 100}%` : "0%";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -48,7 +48,7 @@ export default function AuthFormGlass() {
 
   function handleOAuth(provider) {
     // Mock OAuth for portfolio purposes
-    setError(\`\${provider} OAuth is simulated for this portfolio demo.\`);
+    setError(`${provider} OAuth is simulated for this portfolio demo.`);
   }
 
   return (
