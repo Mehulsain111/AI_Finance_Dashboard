@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="app-body antialiased">
+      <body className="app-body antialiased" suppressHydrationWarning>
       
         <Script id="theme-init" strategy="beforeInteractive">
           {`
