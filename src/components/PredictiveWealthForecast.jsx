@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import Card from "./Card";
 import SkeletonLoader from "./SkeletonLoader";
 
 export default function PredictiveWealthForecast({ transactions }) {
@@ -43,7 +42,12 @@ export default function PredictiveWealthForecast({ transactions }) {
   }, [transactions, data, loading, error, fetchForecast]);
 
   return (
-    <Card title="AI Wealth Forecast" subtitle="Projected balance over the next 6 months">
+    <div className="w-100">
+      <div className="mb-3">
+        <h6 className="fw-semibold mb-1">AI Wealth Forecast</h6>
+        <p className="small text-body-secondary mb-0">Projected balance over the next 6 months</p>
+      </div>
+
       {loading && <SkeletonLoader lines={6} />}
       {error && (
         <div className="d-flex flex-column align-items-start gap-2">
@@ -90,6 +94,6 @@ export default function PredictiveWealthForecast({ transactions }) {
           </ResponsiveContainer>
         </div>
       )}
-    </Card>
+    </div>
   );
 }

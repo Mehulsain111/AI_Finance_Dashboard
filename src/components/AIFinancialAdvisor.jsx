@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import Card from "./Card";
-import EmptyState from "./EmptyState";
 import PredictiveWealthForecast from "./PredictiveWealthForecast";
 import FinancialHealthScorecard from "./FinancialHealthScorecard";
 import SkeletonLoader from "./SkeletonLoader";
+import EmptyState from "./EmptyState";
+import { Search, Sparkles } from "lucide-react";
 
 async function getAIInsights(financialData) {
   const res = await fetch("/api/gemini", {
@@ -36,8 +36,6 @@ const markdownComponents = {
   h3: ({ children }) => <h3 className="h6 fw-semibold mb-2 mt-3">{children}</h3>,
 };
 
-
-
 function ErrorState({ message, onRetry }) {
   return (
     <div className="text-center py-4">
@@ -52,11 +50,17 @@ function ErrorState({ message, onRetry }) {
 export default function AIFinancialAdvisor({ financialData }) {
   const hasData = Array.isArray(financialData) && financialData.length > 0;
 
-  const [activeTab, setActiveTab] = useState("advisor"); // advisor | forecast | risk
+  const [activeTab, setActiveTab] = useState("advisor"); // advisor | forecast | risk | query
   const [status, setStatus] = useState(() => (hasData ? "loading" : "idle"));
   const [insight, setInsight] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const latestRequestId = useRef(0);
+
+  // NLP Ask AI State
+  const [nlpQuery, setNlpQuery] = useState("");
+  const [nlpResult, setNlpResult] = useState(null);
+  const [nlpLoading, setNlpLoading] = useState(false);
+  const [nlpError, setNlpError] = useState("");
 
   const runAnalysis = useCallback(async () => {
     if (!Array.isArray(financialData) || financialData.length === 0) return;
@@ -80,10 +84,33 @@ export default function AIFinancialAdvisor({ financialData }) {
 
   useEffect(() => {
     if (activeTab === "advisor") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       runAnalysis();
     }
   }, [runAnalysis, activeTab]);
+
+  async function handleNlpSearch(e) {
+    e.preventDefault();
+    if (!nlpQuery.trim()) return;
+    setNlpLoading(true);
+    setNlpError("");
+    setNlpResult(null);
+
+    try {
+      const res = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "query", financialData, query: nlpQuery }),
+      });
+      if (!res.ok) throw new Error("Failed to process query");
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setNlpResult(json.result);
+    } catch (err) {
+      setNlpError(err.message);
+    } finally {
+      setNlpLoading(false);
+    }
+  }
 
   return (
     <div className="app-card overflow-hidden">
@@ -102,17 +129,18 @@ export default function AIFinancialAdvisor({ financialData }) {
         )}
       </div>
 
-      <div className="d-flex border-bottom border-secondary border-opacity-10 px-3">
-        {["advisor", "forecast", "risk"].map((tab) => (
+      <div className="d-flex border-bottom border-secondary border-opacity-10 px-3 overflow-x-auto">
+        {["advisor", "forecast", "risk", "query"].map((tab) => (
           <button
             key={tab}
-            className={`btn btn-link text-decoration-none px-4 py-3 fw-medium ${activeTab === tab ? "text-primary border-bottom border-2 border-primary rounded-0" : "text-body-secondary"}`}
+            className={`btn btn-link text-decoration-none px-4 py-3 fw-medium text-nowrap ${activeTab === tab ? "text-primary border-bottom border-2 border-primary rounded-0" : "text-body-secondary"}`}
             onClick={() => setActiveTab(tab)}
             style={{ marginBottom: "-1px" }}
           >
             {tab === "advisor" && "General Advice"}
             {tab === "forecast" && "Wealth Forecast"}
             {tab === "risk" && "Risk Audit"}
+            {tab === "query" && "Ask AI Assistant"}
           </button>
         ))}
       </div>
@@ -140,14 +168,56 @@ export default function AIFinancialAdvisor({ financialData }) {
             )}
 
             {activeTab === "forecast" && (
-              <div className="p-4 bg-black bg-opacity-10 h-100 w-100">
+              <div className="p-4">
                 <PredictiveWealthForecast transactions={financialData} />
               </div>
             )}
 
             {activeTab === "risk" && (
-              <div className="p-4 bg-black bg-opacity-10 h-100 w-100">
+              <div className="p-4">
                 <FinancialHealthScorecard transactions={financialData} />
+              </div>
+            )}
+
+            {activeTab === "query" && (
+              <div className="p-4">
+                <div className="mb-3">
+                  <h6 className="fw-semibold mb-1">Natural Language Expense Query</h6>
+                  <p className="small text-body-secondary mb-0">Ask questions in plain English about your transactions, spending habits, or totals.</p>
+                </div>
+
+                <form onSubmit={handleNlpSearch} className="position-relative d-flex align-items-center mb-3">
+                  <Sparkles size={18} className="position-absolute ms-3" color="#3b82f6" />
+                  <input
+                    type="text"
+                    className="form-control border bg-body-tertiary ps-5 py-2"
+                    placeholder="e.g. 'How much did I spend on groceries?' or 'What was my highest expense?'"
+                    value={nlpQuery}
+                    onChange={(e) => setNlpQuery(e.target.value)}
+                  />
+                  <button type="submit" className="btn btn-primary rounded-pill px-4 ms-2" disabled={nlpLoading}>
+                    {nlpLoading ? (
+                       <div className="spinner-border spinner-border-sm" role="status">
+                         <span className="visually-hidden">Loading...</span>
+                       </div>
+                    ) : (
+                      <Search size={18} />
+                    )}
+                  </button>
+                </form>
+
+                {nlpError && <div className="text-danger small mb-3">{nlpError}</div>}
+
+                {nlpResult && (
+                  <div className="p-3 rounded-3 border" style={{ background: "rgba(59, 130, 246, 0.05)", borderColor: "rgba(59, 130, 246, 0.2)" }}>
+                    <div className="fw-medium text-body">{nlpResult.answer}</div>
+                    {nlpResult.matchedTransactionIds && nlpResult.matchedTransactionIds.length > 0 && (
+                       <div className="mt-2 text-body-secondary small">
+                         Matched {nlpResult.matchedTransactionIds.length} related transactions.
+                       </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

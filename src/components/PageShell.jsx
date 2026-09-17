@@ -1,7 +1,7 @@
-import RoleSwitcher from "./RoleSwitcher";
 import DarkModeToggle from "./DarkModeToggle";
 import Button from "./Button";
 import ProfileMenu from "./ProfileMenu";
+import LiveMarketTicker from "./LiveMarketTicker";
 
 export default function PageShell({ title, subtitle, onAddTransaction, children }) {
   return (
@@ -16,9 +16,8 @@ export default function PageShell({ title, subtitle, onAddTransaction, children 
               </p>
             </div>
 
-            <div className="d-flex flex-wrap align-items-center justify-content-sm-end gap-2">
+            <div className="d-flex flex-wrap align-items-center justify-content-sm-end gap-3">
               <ProfileMenu />
-              <RoleSwitcher />
               <DarkModeToggle />
               {onAddTransaction ? (
                 <Button onClick={onAddTransaction} variant="primary">
@@ -28,6 +27,9 @@ export default function PageShell({ title, subtitle, onAddTransaction, children 
             </div>
           </div>
         </div>
+
+        {/* Institutional Market Ticker Ribbon */}
+        <LiveMarketTicker />
       </header>
 
       <main className="container-xxl py-4">{children}</main>

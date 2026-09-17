@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Card from "./Card";
 import SkeletonLoader from "./SkeletonLoader";
 import { AlertTriangle, ShieldCheck, Info } from "lucide-react";
 
@@ -43,7 +42,11 @@ export default function FinancialHealthScorecard({ transactions }) {
   }, [transactions, data, loading, error, fetchRisk]);
 
   return (
-    <Card title="Financial Health Audit" subtitle="AI Anomaly & Risk Detection">
+    <div className="w-100">
+      <div className="mb-3">
+        <h6 className="fw-semibold mb-1">Financial Health Audit</h6>
+        <p className="small text-body-secondary mb-0">AI Anomaly & Risk Detection</p>
+      </div>
       {loading && <SkeletonLoader lines={4} />}
       {error && (
         <div className="d-flex flex-column align-items-start gap-2">
@@ -108,6 +111,6 @@ export default function FinancialHealthScorecard({ transactions }) {
           </div>
         </div>
       )}
-    </Card>
+    </div>
   );
 }
