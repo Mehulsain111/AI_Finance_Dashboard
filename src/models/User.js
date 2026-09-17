@@ -26,6 +26,8 @@ const UserSchema = new mongoose.Schema(
     profileImageUrl: { type: String, default: "" },
     role: { type: String, enum: ["viewer", "admin"], default: "viewer" },
     darkMode: { type: Boolean, default: false },
+    financialGoal: { type: String, default: "Wealth Growth", trim: true },
+    monthlyIncome: { type: Number, default: 0, min: 0 },
     // Embedded, not a separate collection: the dashboard always reads and
     // writes the whole list together (there's no per-transaction API on the
     // frontend), so this mirrors the original localStorage shape closely.
