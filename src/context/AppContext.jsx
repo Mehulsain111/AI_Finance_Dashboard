@@ -110,6 +110,22 @@ export function AppProvider({ children }) {
     return sortTransactions(transactions, filters.sortBy, filters.sortDir);
   }, [transactions, filters.sortBy, filters.sortDir]);
 
+  const deleteTransaction = React.useCallback(async (id) => {
+    if (!id) return;
+    const backup = [...transactions];
+    // Optimistic UI update
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Server failed to delete transaction");
+    } catch (err) {
+      console.error("Delete transaction failed, rolling back:", err);
+      setTransactions(backup);
+      alert("Failed to delete transaction. Restored state.");
+    }
+  }, [transactions]);
+
   const value = useMemo(
     () => ({
       role,
@@ -119,6 +135,7 @@ export function AppProvider({ children }) {
       transactions: sortedTransactions,
       rawTransactions: transactions,
       setTransactions,
+      deleteTransaction,
       filters,
       setFilters,
       hydrated,
@@ -133,6 +150,7 @@ export function AppProvider({ children }) {
       setRole,
       setDarkMode,
       setTransactions,
+      deleteTransaction,
       setFilters,
     ],
   );
