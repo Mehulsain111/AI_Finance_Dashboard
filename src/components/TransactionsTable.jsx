@@ -48,22 +48,24 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
             </tr>
           </thead>
           <tbody>
-            <AnimatePresence mode="popLayout">
-              {transactions.map((t) => {
+            <AnimatePresence>
+              {transactions.map((t, index) => {
                 const isIncome = t.type === "income";
+                // Guarantee unique and persistent key
+                const itemKey = t.id || t._id || `tx-${index}`;
+
                 return (
                   <motion.tr
-                    key={t.id}
-                    layout
+                    key={itemKey}
+                    layout="position"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ 
                       opacity: 0, 
-                      x: -80, 
-                      scale: 0.95,
-                      transition: { duration: 0.35, ease: "easeOut" } 
+                      x: -50,
+                      transition: { duration: 0.25, ease: "easeOut" } 
                     }}
-                    className="position-relative group"
+                    className="position-relative"
                     style={{ transition: "background-color 0.2s ease" }}
                   >
                     <td className="px-3 py-3 text-nowrap text-body-secondary">
