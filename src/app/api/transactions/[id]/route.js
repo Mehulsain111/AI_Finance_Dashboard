@@ -23,9 +23,9 @@ export async function DELETE(request, { params }) {
       { $pull: { transactions: { id: id } } }
     );
 
-    if (result.modifiedCount === 0) {
+    if (result.matchedCount === 0) {
       return NextResponse.json(
-        { error: "Transaction not found or already deleted" },
+        { error: "User or transaction not found" },
         { status: 404 }
       );
     }
