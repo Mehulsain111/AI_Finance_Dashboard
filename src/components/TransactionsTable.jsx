@@ -14,7 +14,7 @@ function TypePill({ type }) {
   return (
     <span
       className={cn(
-        "badge rounded-pill fw-semibold",
+        "badge rounded-pill fw-semibold pointer-events-none",
         isIncome
           ? "bg-success-subtle text-success-emphasis"
           : "bg-danger-subtle text-danger-emphasis",
@@ -48,25 +48,23 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
             </tr>
           </thead>
           <tbody>
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {transactions.map((t, index) => {
                 const isIncome = t.type === "income";
-                // Guarantee unique and persistent key
                 const itemKey = t.id || t._id || `tx-${index}`;
 
                 return (
                   <motion.tr
                     key={itemKey}
-                    layout="position"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{ 
                       opacity: 0, 
-                      x: -50,
-                      transition: { duration: 0.25, ease: "easeOut" } 
+                      x: -40,
+                      transition: { duration: 0.2, ease: "easeOut" } 
                     }}
                     className="position-relative"
-                    style={{ transition: "background-color 0.2s ease" }}
+                    style={{ willChange: "opacity, transform" }}
                   >
                     <td className="px-3 py-3 text-nowrap text-body-secondary">
                       {formatDate(t.date)}
@@ -94,23 +92,29 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
                             title="Edit transaction"
                             className="p-1 px-2"
                           >
-                            <Edit3 size={14} />
+                            <Edit3 size={14} className="pointer-events-none" />
                           </Button>
                         )}
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
+                        <button
+                          type="button"
                           onClick={() => setDeleteTarget(t)}
                           className="btn btn-sm btn-outline-danger border-0 p-1 px-2 d-inline-flex align-items-center justify-content-center rounded-2"
                           title="Delete transaction"
                           style={{
                             color: "#ef4444",
                             background: "rgba(239, 68, 68, 0.1)",
-                            transition: "all 0.2s ease"
+                            transition: "background 0.2s ease, transform 0.15s ease",
+                            transform: "none",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
                           }}
                         >
-                          <Trash2 size={15} />
-                        </motion.button>
+                          <Trash2 size={15} className="pointer-events-none" />
+                        </button>
                       </div>
                     </td>
                   </motion.tr>
