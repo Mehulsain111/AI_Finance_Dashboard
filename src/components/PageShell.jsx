@@ -35,7 +35,7 @@ export default function PageShell({ title, subtitle, onAddTransaction, isMobile,
             <div className="d-flex align-items-center justify-content-end gap-2 gap-md-3 ms-auto">
               <ProfileMenu />
               <DarkModeToggle />
-              <div className="desktop-only">
+              <div className="desktop-only d-none d-md-block">
                 {onAddTransaction ? (
                   <Button onClick={onAddTransaction} variant="primary">
                     Add Transaction
