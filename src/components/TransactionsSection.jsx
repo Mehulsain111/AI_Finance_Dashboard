@@ -27,7 +27,7 @@ export default function TransactionsSection({ onEdit }) {
           <TransactionsTable
             transactions={filtered}
             role={role}
-            onEdit={role === "admin" ? onEdit : undefined}
+            onEdit={onEdit}
           />
         ) : (
           <div style={{ height: 256 }}>

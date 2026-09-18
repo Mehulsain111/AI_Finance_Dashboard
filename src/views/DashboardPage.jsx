@@ -114,7 +114,7 @@ export default function DashboardPage() {
     <PageShell
       title="Finance Dashboard"
       subtitle="Track balances, spending, and AI insights."
-      onAddTransaction={role === "admin" ? () => setAddOpen(true) : null}
+      onAddTransaction={() => setAddOpen(true)}
       isMobile={isMobile}
     >
       {!hydrated ? (
@@ -160,7 +160,7 @@ export default function DashboardPage() {
           {/* MOBILE BOTTOM NAVIGATION & FAB */}
           {isMobile && (
             <>
-              {role === "admin" && (
+              {true && (
                 <button 
                   className="mobile-fab" 
                   onClick={() => setAddOpen(true)}

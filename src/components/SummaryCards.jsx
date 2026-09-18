@@ -118,7 +118,7 @@ export default function SummaryCards() {
           sub={`Starting balance: ${formatCurrency(startingBalance)}`}
           tone={balance >= 0 ? "green" : "red"}
           icon={Wallet}
-          onEdit={role === "admin" ? handleEdit : undefined}
+          onEdit={handleEdit}
           isEditing={isEditing}
           editValue={editValue}
           setEditValue={setEditValue}

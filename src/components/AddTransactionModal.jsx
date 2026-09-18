@@ -174,7 +174,7 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
 
   return (
     <AnimatePresence>
-      {open && role === "admin" && (
+      {open && (
         <>
           <motion.div 
             initial={{ opacity: 0 }}

@@ -93,7 +93,7 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
                       </td>
                       <td className="px-3 py-3 text-end">
                         <div className="d-flex align-items-center justify-content-end gap-1">
-                          {role === "admin" && onEdit && (
+                          {onEdit && (
                             <Button
                               size="sm"
                               variant="default"
@@ -162,7 +162,7 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
                       drag="x"
                       dragConstraints={{ left: -100, right: 0 }}
                       onDragEnd={(e, info) => {
-                        if (info.offset.x < -80 && role === "admin") {
+                        if (info.offset.x < -80) {
                           setDeleteTarget(t);
                         }
                       }}
@@ -170,8 +170,7 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
                     >
                       <div className="d-flex flex-column">
                         <div className="fw-semibold text-body mb-1 d-flex align-items-center gap-2">
-                          {t.category}
-                          {role === "admin" && onEdit && (
+                          {onEdit && (
                             <button
                               type="button"
                               onClick={() => onEdit(t)}
@@ -189,7 +188,7 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
                         <div className={cn("fw-bold tabular-nums fs-6", isIncome ? "text-success" : "text-danger")}>
                            {isIncome ? "+" : "-"}{formatCurrency(t.amount)}
                         </div>
-                        {role === "admin" && (
+                        
                           <button
                             type="button"
                             onClick={() => setDeleteTarget(t)}
@@ -199,7 +198,7 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
                           >
                             <Trash2 size={18} />
                           </button>
-                        )}
+                        
                       </div>
                     </motion.div>
                   </motion.div>
