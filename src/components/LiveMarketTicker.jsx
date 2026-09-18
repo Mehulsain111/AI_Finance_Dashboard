@@ -29,10 +29,10 @@ export default function LiveMarketTicker() {
     );
   }
 
-  const renderTicker = (symbol, price, prevPrice) => {
+  const renderTicker = (symbol, price, prevPrice, keySuffix = "") => {
     const isUp = !prevPrice || price >= prevPrice;
     return (
-      <div key={symbol} className="d-flex align-items-center gap-1 mx-3" style={{ fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+      <div key={`${symbol}${keySuffix}`} className="d-flex align-items-center gap-1 mx-3" style={{ fontSize: "0.8rem", whiteSpace: "nowrap" }}>
         <span className="fw-bold">{symbol}</span>
         <span className={isUp ? "text-success" : "text-danger"}>
           ${price}
@@ -50,7 +50,7 @@ export default function LiveMarketTicker() {
         </div>
         {/* Duplicate for seamless scrolling */}
         <div className="d-flex align-items-center px-4">
-          {Object.entries(prices).map(([symbol, price]) => renderTicker(symbol, price, prevPrices?.[symbol]))}
+          {Object.entries(prices).map(([symbol, price]) => renderTicker(symbol, price, prevPrices?.[symbol], "-dup"))}
         </div>
       </div>
       <style dangerouslySetInnerHTML={{__html: `

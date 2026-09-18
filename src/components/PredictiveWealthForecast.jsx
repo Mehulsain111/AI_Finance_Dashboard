@@ -83,8 +83,9 @@ export default function PredictiveWealthForecast({ transactions }) {
                 tick={{ fontSize: 12, fill: "#94a3b8" }} 
               />
               <Tooltip 
-                contentStyle={{ borderRadius: '12px', background: 'rgba(255,255,255,0.9)', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
-                itemStyle={{ color: '#0f172a', fontWeight: 'bold' }}
+                contentStyle={{ borderRadius: '12px', background: 'rgba(15, 23, 42, 0.92)', border: '1px solid rgba(255,255,255,0.1)', color: '#f8fafc', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}
+                itemStyle={{ color: '#f8fafc', fontWeight: '600' }}
+                labelStyle={{ color: '#94a3b8', fontWeight: '500', marginBottom: '4px' }}
                 formatter={(value) => [`$${value.toLocaleString()}`, undefined]}
               />
               <Area type="monotone" dataKey="bestCase" stroke="#10b981" fillOpacity={1} fill="url(#colorBest)" name="Best Case" />

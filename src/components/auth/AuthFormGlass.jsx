@@ -85,7 +85,7 @@ export default function AuthFormGlass() {
   }
 
   return (
-    <div className="position-relative w-100 h-100 d-flex align-items-center justify-content-center" style={{ zIndex: 10 }}>
+    <div className="position-relative w-100 min-vh-100 d-flex align-items-center justify-content-center p-3 py-4 py-sm-5" style={{ zIndex: 10 }}>
       <AnimatePresence mode="wait">
         <motion.div
           key={authState}

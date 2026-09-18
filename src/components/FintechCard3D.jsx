@@ -82,7 +82,7 @@ function CreditCardMesh({ name, balance }) {
         anchorX="left"
         font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.ttf"
       >
-        ${balance.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}
+        ${(Number(balance) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </Text>
 
       <Text
@@ -110,7 +110,7 @@ function CreditCardMesh({ name, balance }) {
 
 export default function FintechCard3D({ name, balance }) {
   return (
-    <div style={{ height: "100%", width: "100%", minHeight: "300px", cursor: "pointer" }}>
+    <div style={{ height: "100%", width: "100%", minHeight: "300px", cursor: "pointer", touchAction: "pan-y" }}>
       <Canvas shadows camera={{ position: [0, 0, 4.5], fov: 45 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 10]} intensity={1} castShadow />

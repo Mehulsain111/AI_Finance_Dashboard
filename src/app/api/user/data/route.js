@@ -11,7 +11,7 @@ export async function GET() {
 
   try {
     await dbConnect();
-    const user = await User.findById(userId).select("role darkMode transactions");
+    const user = await User.findById(userId).select("role darkMode transactions startingBalance");
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -20,6 +20,7 @@ export async function GET() {
       role: user.role,
       darkMode: user.darkMode,
       transactions: user.transactions,
+      startingBalance: user.startingBalance ?? 12000,
     });
   } catch (err) {
     console.error("Fetch dashboard data error:", err);
@@ -45,6 +46,7 @@ export async function PUT(request) {
   // SECURITY FIX: Removed `role` update to prevent privilege escalation (IDOR).
   const update = {};
   if (typeof body.darkMode === "boolean") update.darkMode = body.darkMode;
+  if (typeof body.startingBalance === "number") update.startingBalance = body.startingBalance;
   if (Array.isArray(body.transactions)) {
     update.transactions = body.transactions
       .filter((t) => t && typeof t === "object")

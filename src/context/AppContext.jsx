@@ -18,6 +18,7 @@ export function AppProvider({ children }) {
   // stale data for the wrong account.
   const [role, setRole] = useState("viewer");
   const [darkMode, setDarkMode] = useState(false);
+  const [startingBalance, setStartingBalance] = useState(12000);
   const [transactions, setTransactions] = useState(DEFAULT_TRANSACTIONS);
   const [hydrated, setHydrated] = useState(false);
 
@@ -46,6 +47,9 @@ export function AppProvider({ children }) {
         if (cancelled) return;
         setRole(data.role === "admin" ? "admin" : "viewer");
         setDarkMode(Boolean(data.darkMode));
+        if (typeof data.startingBalance === "number") {
+          setStartingBalance(data.startingBalance);
+        }
         setTransactions(
           Array.isArray(data.transactions) && data.transactions.length
             ? data.transactions
@@ -106,6 +110,15 @@ export function AppProvider({ children }) {
     else delete root.dataset.bsTheme;
   }, [hydrated, darkMode]);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    fetch("/api/user/data", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ startingBalance }),
+    }).catch((err) => console.error("Failed to save starting balance:", err));
+  }, [hydrated, startingBalance]);
+
   const sortedTransactions = useMemo(() => {
     return sortTransactions(transactions, filters.sortBy, filters.sortDir);
   }, [transactions, filters.sortBy, filters.sortDir]);
@@ -121,6 +134,8 @@ export function AppProvider({ children }) {
       setRole,
       darkMode,
       setDarkMode,
+      startingBalance,
+      setStartingBalance,
       transactions: sortedTransactions,
       rawTransactions: transactions,
       setTransactions,
@@ -132,6 +147,7 @@ export function AppProvider({ children }) {
     [
       role,
       darkMode,
+      startingBalance,
       sortedTransactions,
       transactions,
       filters,

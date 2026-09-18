@@ -64,7 +64,7 @@ function AICore() {
 
 export default function Auth3DBackground() {
   return (
-    <div className="position-absolute top-0 start-0 w-100 h-100" style={{ zIndex: 0, overflow: "hidden", background: "#020617" }}>
+    <div className="position-absolute top-0 start-0 w-100 h-100 pointer-events-none" style={{ zIndex: 0, overflow: "hidden", background: "#020617" }}>
       <Canvas camera={{ position: [0, 0, 4], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 10]} intensity={1} />

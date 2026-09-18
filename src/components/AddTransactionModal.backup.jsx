@@ -19,14 +19,6 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
   const { role, rawTransactions, setTransactions } = useApp();
   const [form, setForm] = useState(DEFAULT_FORM);
   const [error, setError] = useState("");
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 992);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanPreview, setScanPreview] = useState(null);
@@ -60,6 +52,7 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
+  if (!open || role !== "admin") return null;
 
   function update(patch) {
     setForm((f) => ({ ...f, ...patch }));
@@ -162,61 +155,16 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  const modalVariants = isMobile ? {
-    hidden: { y: "100%", opacity: 1 },
-    visible: { y: 0, opacity: 1, transition: { type: "spring", damping: 25, stiffness: 300 } },
-    exit: { y: "100%", opacity: 1, transition: { damping: 20, stiffness: 200 } }
-  } : {
-    hidden: { scale: 0.95, opacity: 0 },
-    visible: { scale: 1, opacity: 1, transition: { type: "spring", damping: 25, stiffness: 300 } },
-    exit: { scale: 0.95, opacity: 0, transition: { duration: 0.2 } }
-  };
-
   return (
-    <AnimatePresence>
-      {open && role === "admin" && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            className="modal-backdrop bg-dark position-fixed top-0 start-0 w-100 h-100"
-            style={{ zIndex: 1055 }}
-            onClick={onClose}
-          />
-          <div 
-            className={cn("modal d-block", isMobile && "position-fixed bottom-0 top-auto")} 
-            tabIndex="-1" 
-            style={{ zIndex: 1060, ...(isMobile ? { height: "auto", maxHeight: "90vh", bottom: 0, left: 0, right: 0 } : {}) }}
-          >
-            <div className={cn("modal-dialog", !isMobile && "modal-dialog-centered", isMobile && "m-0 mx-auto w-100")}>
-              <motion.div 
-                variants={modalVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className={cn("modal-content shadow-lg border-0", isMobile && "rounded-bottom-0 rounded-top-4 overflow-hidden d-flex flex-column")}
-                style={isMobile ? { maxHeight: "88vh", paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" } : {}}
-              >
-                <div className="modal-header border-bottom-0 pb-0 flex-shrink-0">
-                  {isMobile ? (
-                    <div className="w-100 d-flex flex-column align-items-center">
-                      <div className="bg-secondary rounded-pill mb-3" style={{ width: 40, height: 4, opacity: 0.3 }} />
-                      <div className="d-flex w-100 justify-content-between align-items-center">
-                        <h5 className="modal-title fw-bold">{isEditing ? "Edit Transaction" : "Add Transaction"}</h5>
-                        <button type="button" className="btn-close" onClick={onClose} />
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <h5 className="modal-title fw-bold">{isEditing ? "Edit Transaction" : "Add Transaction"}</h5>
-                      <button type="button" className="btn-close" onClick={onClose} />
-                    </>
-                  )}
-                </div>
-                <form onSubmit={submit} className="d-flex flex-column overflow-hidden flex-grow-1">
-                  <div className="modal-body overflow-y-auto" style={{ WebkitOverflowScrolling: "touch", maxHeight: isMobile ? "65vh" : undefined }}>
-                    <div className="row g-3">
+    <>
+      <div
+        className="modal fade show"
+              />
+            </div>
+
+            <form onSubmit={submit}>
+              <div className="modal-body">
+                <div className="row g-3">
                   {!isEditing && (
                     <div className="col-12">
                       <input 
@@ -277,8 +225,7 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
                           {!isScanning && (
                             <button 
                               type="button" 
-                              className="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 rounded-circle p-2 d-flex align-items-center justify-content-center"
-                              style={{ width: "44px", height: "44px" }}
+                              className="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 rounded-circle p-1 d-flex"
                               onClick={clearScan}
                               aria-label="Remove receipt"
                             >
@@ -318,8 +265,7 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
                       Category / Description
                       <button 
                         type="button" 
-                        className="btn btn-link btn-sm p-2 text-decoration-none d-flex align-items-center gap-1"
-                        style={{ minHeight: "44px" }}
+                        className="btn btn-link btn-sm p-0 text-decoration-none d-flex align-items-center gap-1"
                         disabled={isCategorizing}
                         onClick={async () => {
                           if (!form.category) return setError("Enter a description to categorize.");
@@ -385,7 +331,7 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
                 </div>
               </div>
 
-              <div className="modal-footer flex-shrink-0">
+              <div className="modal-footer">
                 <Button type="button" variant="default" onClick={onClose}>
                   Cancel
                 </Button>
@@ -394,11 +340,10 @@ export default function AddTransactionModal({ open, onClose, transaction }) {
                 </Button>
               </div>
             </form>
-              </motion.div>
-            </div>
           </div>
-        </>
-      )}
-    </AnimatePresence>
+        </div>
+      </div>
+      <div className="modal-backdrop fade show" />
+    </>
   );
 }

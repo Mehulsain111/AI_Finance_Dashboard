@@ -6,7 +6,10 @@ import PredictiveWealthForecast from "./PredictiveWealthForecast";
 import FinancialHealthScorecard from "./FinancialHealthScorecard";
 import SkeletonLoader from "./SkeletonLoader";
 import EmptyState from "./EmptyState";
-import { Search, Sparkles } from "lucide-react";
+import { Send, Sparkles } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+import { makeId } from "@/utils/id";
 
 async function getAIInsights(financialData) {
   const res = await fetch("/api/gemini", {
@@ -48,19 +51,21 @@ function ErrorState({ message, onRetry }) {
 }
 
 export default function AIFinancialAdvisor({ financialData }) {
+  const { user, refreshUser } = useAuth();
+  const { rawTransactions, setTransactions, deleteTransaction } = useApp();
   const hasData = Array.isArray(financialData) && financialData.length > 0;
 
-  const [activeTab, setActiveTab] = useState("advisor"); // advisor | forecast | risk | query
+  const [activeTab, setActiveTab] = useState("advisor"); // advisor | forecast | risk | copilot
   const [status, setStatus] = useState(() => (hasData ? "loading" : "idle"));
   const [insight, setInsight] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const latestRequestId = useRef(0);
 
-  // NLP Ask AI State
-  const [nlpQuery, setNlpQuery] = useState("");
-  const [nlpResult, setNlpResult] = useState(null);
-  const [nlpLoading, setNlpLoading] = useState(false);
-  const [nlpError, setNlpError] = useState("");
+  // Copilot Chat State
+  const [messages, setMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatScrollRef = useRef(null);
 
   const runAnalysis = useCallback(async () => {
     if (!Array.isArray(financialData) || financialData.length === 0) return;
@@ -88,28 +93,115 @@ export default function AIFinancialAdvisor({ financialData }) {
     }
   }, [runAnalysis, activeTab]);
 
-  async function handleNlpSearch(e) {
-    e.preventDefault();
-    if (!nlpQuery.trim()) return;
-    setNlpLoading(true);
-    setNlpError("");
-    setNlpResult(null);
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [messages, chatLoading]);
 
+  async function callCopilot(currentHistory) {
+    setChatLoading(true);
     try {
-      const res = await fetch("/api/gemini", {
+      const res = await fetch("/api/copilot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "query", financialData, query: nlpQuery }),
+        body: JSON.stringify({ 
+          history: currentHistory, 
+          financialData: rawTransactions, 
+          userProfile: user 
+        }),
       });
-      if (!res.ok) throw new Error("Failed to process query");
+      if (!res.ok) throw new Error("Failed to process message");
       const json = await res.json();
       if (json.error) throw new Error(json.error);
-      setNlpResult(json.result);
+      
+      const { text, functionCalls } = json.result;
+      
+      let nextHistory = [...currentHistory];
+      
+      // If AI responds with text, add it
+      if (text) {
+        nextHistory.push({ role: "model", parts: [{ text }] });
+        setMessages([...nextHistory]);
+      }
+
+      // If AI wants to execute tools
+      if (functionCalls && functionCalls.length > 0) {
+        // Add the function call to history
+        nextHistory.push({ role: "model", parts: functionCalls.map(fc => ({ functionCall: fc })) });
+        setMessages([...nextHistory]);
+
+        const functionResponses = [];
+
+        // Execute each tool locally
+        for (const fc of functionCalls) {
+          const { name, args } = fc;
+          let result = { success: true };
+          
+          try {
+            if (name === "add_transaction") {
+              const newTx = {
+                id: makeId("t"),
+                date: args.date || new Date().toISOString().slice(0, 10),
+                type: args.type,
+                category: args.category,
+                amount: Number(args.amount)
+              };
+              setTransactions(prev => [...prev, newTx]);
+              result = { success: true, message: "Transaction added", id: newTx.id };
+            } 
+            else if (name === "delete_transaction") {
+              deleteTransaction(args.id);
+              result = { success: true, message: "Transaction deleted" };
+            }
+            else if (name === "update_profile") {
+              const res = await fetch("/api/user/profile", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(args)
+              });
+              if (!res.ok) throw new Error("Failed to update profile");
+              await refreshUser();
+              result = { success: true, message: "Profile updated" };
+            }
+          } catch (e) {
+            result = { success: false, error: e.message };
+          }
+          
+          functionResponses.push({
+            functionResponse: {
+              name,
+              response: result
+            }
+          });
+        }
+        
+        // Add tool responses to history
+        nextHistory.push({ role: "function", parts: functionResponses });
+        setMessages([...nextHistory]);
+        
+        // Recursively call copilot so it can observe the result and say something
+        await callCopilot(nextHistory);
+      }
     } catch (err) {
-      setNlpError(err.message);
+      console.error("Copilot Error:", err);
+      setMessages(prev => [...prev, { role: "model", parts: [{ text: "Sorry, I encountered an error. Please try again." }] }]);
     } finally {
-      setNlpLoading(false);
+      setChatLoading(false);
     }
+  }
+
+  async function handleSendMessage(e) {
+    e.preventDefault();
+    if (!chatInput.trim() || chatLoading) return;
+    
+    const userMessage = chatInput.trim();
+    setChatInput("");
+    
+    const newHistory = [...messages, { role: "user", parts: [{ text: userMessage }] }];
+    setMessages(newHistory);
+    
+    await callCopilot(newHistory);
   }
 
   return (
@@ -130,7 +222,7 @@ export default function AIFinancialAdvisor({ financialData }) {
       </div>
 
       <div className="d-flex border-bottom border-secondary border-opacity-10 px-3 overflow-x-auto">
-        {["advisor", "forecast", "risk", "query"].map((tab) => (
+        {["advisor", "forecast", "risk", "copilot"].map((tab) => (
           <button
             key={tab}
             className={`btn btn-link text-decoration-none px-4 py-3 fw-medium text-nowrap ${activeTab === tab ? "text-primary border-bottom border-2 border-primary rounded-0" : "text-body-secondary"}`}
@@ -140,7 +232,7 @@ export default function AIFinancialAdvisor({ financialData }) {
             {tab === "advisor" && "General Advice"}
             {tab === "forecast" && "Wealth Forecast"}
             {tab === "risk" && "Risk Audit"}
-            {tab === "query" && "Ask AI Assistant"}
+            {tab === "copilot" && "Agent Copilot"}
           </button>
         ))}
       </div>
@@ -179,45 +271,101 @@ export default function AIFinancialAdvisor({ financialData }) {
               </div>
             )}
 
-            {activeTab === "query" && (
-              <div className="p-4">
-                <div className="mb-3">
-                  <h6 className="fw-semibold mb-1">Natural Language Expense Query</h6>
-                  <p className="small text-body-secondary mb-0">Ask questions in plain English about your transactions, spending habits, or totals.</p>
+            {activeTab === "copilot" && (
+              <div className="d-flex flex-column" style={{ height: "400px" }}>
+                <div 
+                  ref={chatScrollRef} 
+                  className="flex-grow-1 p-3 overflow-y-auto d-flex flex-column gap-3" 
+                  style={{ background: "color-mix(in srgb, var(--bs-body-bg) 50%, transparent)" }}
+                >
+                  {messages.length === 0 && (
+                    <div className="text-center text-body-secondary my-auto p-4">
+                      <Sparkles className="mb-3 text-primary opacity-50" size={32} />
+                      <p className="small mb-1">Hi, I am your Financial Copilot!</p>
+                      <p className="small opacity-75">I can add/delete transactions or update your goals for you.</p>
+                      <div className="d-flex flex-wrap gap-2 justify-content-center mt-3">
+                        <button 
+                          type="button" 
+                          onClick={() => setChatInput("Add $50 for Groceries")} 
+                          className="btn btn-sm btn-outline-secondary rounded-pill fw-normal py-2 px-3 text-body-secondary small d-flex align-items-center"
+                          style={{ minHeight: "44px" }}
+                        >
+                          Add $50 for Groceries
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => setChatInput("Change my goal to 'Vacation'")} 
+                          className="btn btn-sm btn-outline-secondary rounded-pill fw-normal py-2 px-3 text-body-secondary small d-flex align-items-center"
+                          style={{ minHeight: "44px" }}
+                        >
+                          Change my goal to &apos;Vacation&apos;
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {messages.map((msg, i) => {
+                    if (msg.role === "function") return null; // Don't show invisible function execution to user directly, or show a tiny toast
+                    
+                    const isUser = msg.role === "user";
+                    const isToolCall = msg.parts?.some(p => p.functionCall);
+                    
+                    if (isToolCall) {
+                      return (
+                        <div key={i} className="d-flex align-self-start ms-2 mb-1">
+                          <div className="small text-primary fst-italic d-flex align-items-center gap-1">
+                            <span className="spinner-border spinner-border-sm" role="status" style={{width: "0.8rem", height: "0.8rem"}} />
+                            Executing action...
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    const text = msg.parts?.find(p => p.text)?.text;
+                    if (!text) return null;
+
+                    return (
+                      <div key={i} className={`d-flex ${isUser ? 'justify-content-end' : 'justify-content-start'}`}>
+                        <div 
+                          className={`p-3 rounded-3 shadow-sm ${isUser ? 'bg-primary text-white' : 'bg-body border'}`}
+                          style={{ maxWidth: "85%", borderRadius: isUser ? "1rem 1rem 0 1rem" : "1rem 1rem 1rem 0" }}
+                        >
+                           {isUser ? text : <ReactMarkdown components={{...markdownComponents, p: ({children}) => <p className="mb-0">{children}</p>}}>{text}</ReactMarkdown>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {chatLoading && !messages[messages.length - 1]?.parts?.some(p => p.functionCall) && (
+                    <div className="d-flex justify-content-start">
+                      <div className="p-3 rounded-3 bg-body border d-flex gap-1 align-items-center" style={{ borderRadius: "1rem 1rem 1rem 0" }}>
+                         <span className="spinner-grow spinner-grow-sm text-primary opacity-50" style={{ animationDelay: "0ms" }} />
+                         <span className="spinner-grow spinner-grow-sm text-primary opacity-50" style={{ animationDelay: "150ms" }} />
+                         <span className="spinner-grow spinner-grow-sm text-primary opacity-50" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <form onSubmit={handleNlpSearch} className="position-relative d-flex align-items-center mb-3">
-                  <Sparkles size={18} className="position-absolute ms-3" color="#3b82f6" />
-                  <input
-                    type="text"
-                    className="form-control border bg-body-tertiary ps-5 py-2"
-                    placeholder="e.g. 'How much did I spend on groceries?' or 'What was my highest expense?'"
-                    value={nlpQuery}
-                    onChange={(e) => setNlpQuery(e.target.value)}
-                  />
-                  <button type="submit" className="btn btn-primary rounded-pill px-4 ms-2" disabled={nlpLoading}>
-                    {nlpLoading ? (
-                       <div className="spinner-border spinner-border-sm" role="status">
-                         <span className="visually-hidden">Loading...</span>
-                       </div>
-                    ) : (
-                      <Search size={18} />
-                    )}
-                  </button>
-                </form>
-
-                {nlpError && <div className="text-danger small mb-3">{nlpError}</div>}
-
-                {nlpResult && (
-                  <div className="p-3 rounded-3 border" style={{ background: "rgba(59, 130, 246, 0.05)", borderColor: "rgba(59, 130, 246, 0.2)" }}>
-                    <div className="fw-medium text-body">{nlpResult.answer}</div>
-                    {nlpResult.matchedTransactionIds && nlpResult.matchedTransactionIds.length > 0 && (
-                       <div className="mt-2 text-body-secondary small">
-                         Matched {nlpResult.matchedTransactionIds.length} related transactions.
-                       </div>
-                    )}
-                  </div>
-                )}
+                <div className="p-3 border-top">
+                  <form onSubmit={handleSendMessage} className="position-relative d-flex align-items-center">
+                    <input
+                      type="text"
+                      className="form-control border bg-body-tertiary rounded-pill ps-4 py-2 pe-5"
+                      placeholder="Ask me to add an expense or update your goals..."
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      disabled={chatLoading}
+                      style={{ paddingRight: "56px" }}
+                    />
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary rounded-circle p-0 position-absolute end-0 me-1 d-flex align-items-center justify-content-center" 
+                      disabled={chatLoading || !chatInput.trim()}
+                      style={{ width: "44px", height: "44px" }}
+                    >
+                      <Send size={18} />
+                    </button>
+                  </form>
+                </div>
               </div>
             )}
           </div>

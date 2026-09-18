@@ -28,8 +28,8 @@ function TooltipContent({ active, payload, label }) {
 }
 
 export default function BalanceLineChart({ disabled }) {
-  const { rawTransactions, darkMode } = useApp();
-  const data = balanceTrend(rawTransactions);
+  const { rawTransactions, startingBalance, darkMode } = useApp();
+  const data = balanceTrend(rawTransactions, startingBalance);
 
   if (disabled || !data.length) {
     return <EmptyState title="No transactions yet" hint="Add a transaction to see your balance trend." />;

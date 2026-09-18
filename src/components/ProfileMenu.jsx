@@ -49,7 +49,7 @@ export default function ProfileMenu() {
         type="button"
         onClick={() => fileInputRef.current?.click()}
         className="btn p-0 border-0 rounded-circle overflow-hidden flex-shrink-0"
-        style={{ width: 32, height: 32 }}
+        style={{ width: 44, height: 44 }}
         title="Change profile photo"
         aria-label="Change profile photo"
         disabled={uploading}
@@ -58,14 +58,14 @@ export default function ProfileMenu() {
           <Image
             src={user.profileImageUrl}
             alt={user.name}
-            width={32}
-            height={32}
+            width={44}
+            height={44}
             style={{ objectFit: "cover", width: "100%", height: "100%" }}
           />
         ) : (
           <span
             className="d-flex align-items-center justify-content-center bg-secondary-subtle text-secondary-emphasis fw-semibold"
-            style={{ width: 32, height: 32, fontSize: 13 }}
+            style={{ width: 44, height: 44, fontSize: 16 }}
           >
             {initial}
           </span>
@@ -79,11 +79,11 @@ export default function ProfileMenu() {
         className="d-none"
       />
 
-      <span className="small fw-medium text-truncate" style={{ maxWidth: 120 }}>
+      <span className="small fw-medium text-truncate d-none d-sm-inline" style={{ maxWidth: 120 }}>
         {uploading ? "Uploading..." : user.name}
       </span>
 
-      <button type="button" onClick={handleLogout} className="btn btn-sm btn-link text-decoration-none p-0">
+      <button type="button" onClick={handleLogout} className="btn btn-sm btn-link text-decoration-none p-2 d-flex align-items-center justify-content-center" style={{ minHeight: "44px", minWidth: "44px" }}>
         Logout
       </button>
 

@@ -26,7 +26,7 @@ export function sortTransactions(transactions, sortBy, sortDir) {
   return items;
 }
 
-export function totals(transactions) {
+export function totals(transactions, startingBalance = STARTING_BALANCE) {
   const items = Array.isArray(transactions) ? transactions : [];
   let income = 0;
   let expenses = 0;
@@ -35,7 +35,7 @@ export function totals(transactions) {
     if (normalizeType(t.type) === "income") income += amt;
     else expenses += amt;
   }
-  const balance = STARTING_BALANCE + income - expenses;
+  const balance = startingBalance + income - expenses;
   return { income, expenses, balance };
 }
 
@@ -72,10 +72,10 @@ export function highestSpendingCategory(transactions) {
   return byCat[0] || null;
 }
 
-export function balanceTrend(transactions) {
+export function balanceTrend(transactions, startingBalance = STARTING_BALANCE) {
   const items = sortTransactions(transactions || [], "date", "asc");
   const points = [];
-  let running = STARTING_BALANCE;
+  let running = startingBalance;
   for (const t of items) {
     const amt = Number(t.amount || 0);
     running += normalizeType(t.type) === "income" ? amt : -amt;

@@ -1,5 +1,4 @@
 "use client";
-
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useApp } from "@/context/AppContext";
 import { spendingByCategory } from "@/utils/finance";
@@ -35,10 +34,10 @@ export default function SpendingPieChart({ disabled }) {
         <Tooltip content={<TooltipContent />} />
         <Legend
           verticalAlign="bottom"
-          height={36}
           iconType="circle"
           wrapperStyle={{
             fontSize: 12,
+            paddingTop: 8,
             color: darkMode ? "rgba(226,232,240,0.85)" : "rgba(100,116,139,1)",
           }}
         />

@@ -4,7 +4,7 @@ export default function Card({ title, subtitle, actions, className, children }) 
   return (
     <section
       className={cn(
-        "card app-card shadow-sm",
+        "card app-card  mb-4 shadow-sm",
         className,
       )}
     >

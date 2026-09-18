@@ -40,11 +40,11 @@ export async function POST(request) {
     
     // Helper to retry and fallback through available models on 503 or 429
     const FALLBACK_MODELS = [
-      "gemini-3.6-flash", 
-      "gemini-3.7-flash",
-      "gemini-3.8-flash",
-      "gemini-3.5-flash",
-      "gemini-3.1-flash-lite"
+      "gemini-3.5-flash-lite", 
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash-lite"
     ];
 
     async function generateWithRetry(options) {
@@ -75,7 +75,7 @@ export async function POST(request) {
       case "advisor": {
         const prompt = `I am providing you with the user's raw financial data in JSON format: ${JSON.stringify(financialData)}. Analyze this data and provide exactly 3 short, highly personalized, and actionable saving recommendations. Highlight the biggest area of overspending. Return the response in clean markdown format.`;
         response = await generateWithRetry({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.5-flash-lite",
           contents: prompt,
           config: { systemInstruction: "You are an expert financial advisor." },
         });
@@ -86,7 +86,7 @@ export async function POST(request) {
         // Output structured data: array of monthly projections
         const prompt = `Based on the following transaction history: ${JSON.stringify(financialData)}, project the user's total balance for the next 6 months. Take into account their average monthly income and expenses. Return a realistic projection.`;
         response = await generateWithRetry({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.5-flash-lite",
           contents: prompt,
           config: {
             systemInstruction: "You are a quantitative financial analyst. Produce realistic wealth forecasts.",
@@ -113,7 +113,7 @@ export async function POST(request) {
         // NLP Expense Querying
         const prompt = `User query: "${query}". Based on this transaction history: ${JSON.stringify(financialData)}, answer the query concisely. In your response, include a natural language answer, and if applicable, an array of the transaction IDs that match the query so we can highlight them.`;
         response = await generateWithRetry({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.5-flash-lite",
           contents: prompt,
           config: {
             systemInstruction: "You are a helpful financial assistant answering questions about user transactions.",
@@ -138,7 +138,7 @@ export async function POST(request) {
       case "risk": {
         const prompt = `Analyze this transaction history for risks, subscription traps, or unusual spending: ${JSON.stringify(financialData)}. Provide an overall health score (0-100) and list specific alerts.`;
         response = await generateWithRetry({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.5-flash-lite",
           contents: prompt,
           config: {
             systemInstruction: "You are an automated risk and anomaly detection system for personal finance.",
@@ -171,7 +171,7 @@ export async function POST(request) {
         const { description } = body;
         const prompt = `Given the transaction description "${description}", suggest a category (e.g., Groceries, Utilities, Entertainment, Dining, Transportation, Health, Income) and whether it's likely an 'income' or 'expense'.`;
         response = await generateWithRetry({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.5-flash-lite",
           contents: prompt,
           config: {
             systemInstruction: "You categorize transactions automatically.",

@@ -4,19 +4,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Trash2, X } from "lucide-react";
 
 export default function DeleteConfirmationModal({ open, onClose, onConfirm, transaction }) {
-  if (!open) return null;
-
   return (
     <AnimatePresence>
-      <div 
-        className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
-        style={{ zIndex: 1050, background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(8px)" }}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
+      {open && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+          style={{ zIndex: 1060, background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(8px)" }}
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            onClick={(e) => e.stopPropagation()}
           className="card overflow-hidden shadow-2xl border-0"
           style={{
             maxWidth: 420,
@@ -76,8 +80,9 @@ export default function DeleteConfirmationModal({ open, onClose, onConfirm, tran
               </motion.button>
             </div>
           </div>
+          </motion.div>
         </motion.div>
-      </div>
+      )}
     </AnimatePresence>
   );
 }
