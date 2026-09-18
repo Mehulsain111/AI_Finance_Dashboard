@@ -106,10 +106,8 @@ ${JSON.stringify(financialData, null, 2)}
     });
 
     const FALLBACK_MODELS = [
-      "gemini-2.5-flash",
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-3.5-flash-lite"
+      "gemini-3.5-flash-lite",
+      "gemini-3.6-flash"
     ];
 
     let response;
@@ -126,7 +124,7 @@ ${JSON.stringify(financialData, null, 2)}
             temperature: 0.2,
           },
         });
-        if (response?.candidates?.[0]) break;
+        if (response?.candidates?.[0]?.content?.parts) break;
       } catch (err) {
         console.warn(`Copilot model ${model} failed:`, err.message);
         lastError = err;
@@ -138,8 +136,8 @@ ${JSON.stringify(financialData, null, 2)}
     }
 
     const candidate = response.candidates?.[0];
-    if (!candidate) {
-      return NextResponse.json({ error: "Failed to generate response" }, { status: 500 });
+    if (!candidate || !candidate.content?.parts) {
+      return NextResponse.json({ error: "Failed to generate response from AI model" }, { status: 500 });
     }
 
     const newParts = candidate.content.parts;
@@ -151,6 +149,7 @@ ${JSON.stringify(financialData, null, 2)}
     return NextResponse.json({
       result: {
         text: textPart,
+        rawParts: newParts,
         functionCalls: functionCalls.length > 0 ? functionCalls : undefined
       }
     });

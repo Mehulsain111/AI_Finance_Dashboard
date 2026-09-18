@@ -111,31 +111,32 @@ export default function AIFinancialAdvisor({ financialData }) {
           userProfile: user 
         }),
       });
-      if (!res.ok) throw new Error("Failed to process message");
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.error) {
+        throw new Error(json.error || "Failed to process message");
+      }
       
-      const { text, functionCalls } = json.result;
+      const { text, rawParts, functionCalls } = json.result || {};
       
       let nextHistory = [...currentHistory];
       
       // If AI responds with text, add it
       if (text) {
-        nextHistory.push({ role: "model", parts: [{ text }] });
+        nextHistory.push({ role: "model", parts: rawParts || [{ text }] });
         setMessages([...nextHistory]);
       }
 
       // If AI wants to execute tools
       if (functionCalls && functionCalls.length > 0) {
-        // Add the function call to history
-        nextHistory.push({ role: "model", parts: functionCalls.map(fc => ({ functionCall: fc })) });
+        // Add the exact model response parts to history so thoughtSignature is preserved
+        nextHistory.push({ role: "model", parts: rawParts || functionCalls.map(fc => ({ functionCall: fc })) });
         setMessages([...nextHistory]);
 
         const functionResponses = [];
 
         // Execute each tool locally
         for (const fc of functionCalls) {
-          const { name, args } = fc;
+          const { name, args, id } = fc;
           let result = { success: true };
           
           try {
@@ -170,6 +171,7 @@ export default function AIFinancialAdvisor({ financialData }) {
           
           functionResponses.push({
             functionResponse: {
+              ...(id ? { id } : {}),
               name,
               response: { output: result }
             }
