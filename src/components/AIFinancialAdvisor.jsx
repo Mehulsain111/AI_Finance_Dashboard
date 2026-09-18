@@ -171,16 +171,16 @@ export default function AIFinancialAdvisor({ financialData }) {
           functionResponses.push({
             functionResponse: {
               name,
-              response: result
+              response: { output: result }
             }
           });
         }
         
-        // Add tool responses to history
-        nextHistory.push({ role: "function", parts: functionResponses });
+        // Add tool responses to history using 'user' role (Gemini API requirement)
+        nextHistory.push({ role: "user", parts: functionResponses });
         setMessages([...nextHistory]);
         
-        // Recursively call copilot so it can observe the result and say something
+        // Recursively call copilot so it can observe the result and generate a confirmation
         await callCopilot(nextHistory);
       }
     } catch (err) {
@@ -304,17 +304,25 @@ export default function AIFinancialAdvisor({ financialData }) {
                     </div>
                   )}
                   {messages.map((msg, i) => {
-                    if (msg.role === "function") return null; // Don't show invisible function execution to user directly, or show a tiny toast
+                    const isToolResponse = msg.parts?.some(p => p.functionResponse);
+                    if (msg.role === "function" || isToolResponse) return null;
                     
                     const isUser = msg.role === "user";
                     const isToolCall = msg.parts?.some(p => p.functionCall);
                     
                     if (isToolCall) {
+                      const isOngoing = chatLoading && i === messages.length - 1;
                       return (
                         <div key={i} className="d-flex align-self-start ms-2 mb-1">
                           <div className="small text-primary fst-italic d-flex align-items-center gap-1">
-                            <span className="spinner-border spinner-border-sm" role="status" style={{width: "0.8rem", height: "0.8rem"}} />
-                            Executing action...
+                            {isOngoing ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm" role="status" style={{width: "0.8rem", height: "0.8rem"}} />
+                                Executing action...
+                              </>
+                            ) : (
+                              <span className="text-success fw-medium">✓ Action performed</span>
+                            )}
                           </div>
                         </div>
                       );

@@ -81,18 +81,61 @@ Current Financial Data:
 ${JSON.stringify(financialData, null, 2)}
 `;
 
-    // History contains objects in the format:
-    // { role: "user" | "model" | "function", parts: [{ text: "..." }, { functionCall: {...} }, { functionResponse: {...} }] }
-
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash-lite",
-      contents: history,
-      config: {
-        systemInstruction: systemInstruction,
-        tools: tools,
-        temperature: 0.2, // Low temperature for reliable tool calling
-      }
+    // Sanitize history: Gemini API only allows role 'user' and 'model'.
+    // Function responses must be sent with role 'user'.
+    const sanitizedHistory = history.map((item) => {
+      const role = item.role === "function" || item.role === "tool" ? "user" : item.role;
+      return {
+        role,
+        parts: (item.parts || []).map((part) => {
+          if (part.functionResponse) {
+            return {
+              functionResponse: {
+                name: part.functionResponse.name,
+                response:
+                  typeof part.functionResponse.response === "object" &&
+                  part.functionResponse.response !== null
+                    ? part.functionResponse.response
+                    : { output: part.functionResponse.response },
+              },
+            };
+          }
+          return part;
+        }),
+      };
     });
+
+    const FALLBACK_MODELS = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-3.5-flash-lite"
+    ];
+
+    let response;
+    let lastError;
+
+    for (const model of FALLBACK_MODELS) {
+      try {
+        response = await ai.models.generateContent({
+          model,
+          contents: sanitizedHistory,
+          config: {
+            systemInstruction,
+            tools,
+            temperature: 0.2,
+          },
+        });
+        if (response?.candidates?.[0]) break;
+      } catch (err) {
+        console.warn(`Copilot model ${model} failed:`, err.message);
+        lastError = err;
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error("Failed to generate response across all models");
+    }
 
     const candidate = response.candidates?.[0];
     if (!candidate) {
