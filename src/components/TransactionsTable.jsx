@@ -168,37 +168,44 @@ export default function TransactionsTable({ transactions, role, onEdit }) {
                       }}
                       className="bg-body p-3 rounded-3 shadow-sm position-relative z-1 d-flex justify-content-between align-items-center"
                     >
-                      <div className="d-flex flex-column">
-                        <div className="fw-semibold text-body mb-1 d-flex align-items-center gap-2">
+                      <div className="d-flex flex-column gap-1 overflow-hidden me-2">
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="fw-bold text-body fs-6 text-truncate" title={t.category}>
+                            {t.category}
+                          </span>
                           {onEdit && (
                             <button
                               type="button"
                               onClick={() => onEdit(t)}
-                              className="btn btn-sm btn-link p-2 text-body-secondary d-flex align-items-center justify-content-center"
-                              style={{ minHeight: "44px", minWidth: "44px" }}
+                              className="btn btn-sm btn-link p-1 text-body-secondary d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                              style={{ minHeight: "36px", minWidth: "36px" }}
                               title="Edit transaction"
+                              aria-label="Edit transaction"
                             >
-                              <Edit3 size={16} />
+                              <Edit3 size={15} />
                             </button>
                           )}
                         </div>
-                        <div className="small text-body-secondary">{formatDate(t.date)} &bull; {t.type}</div>
-                      </div>
-                      <div className="d-flex align-items-center gap-2">
-                        <div className={cn("fw-bold tabular-nums fs-6", isIncome ? "text-success" : "text-danger")}>
-                           {isIncome ? "+" : "-"}{formatCurrency(t.amount)}
+                        <div className="small text-body-secondary d-flex align-items-center gap-2 flex-wrap">
+                          <span>{formatDate(t.date)}</span>
+                          <span>&bull;</span>
+                          <TypePill type={t.type} />
                         </div>
-                        
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTarget(t)}
-                            className="btn btn-sm btn-link text-danger p-2 d-flex align-items-center justify-content-center"
-                            style={{ minHeight: "44px", minWidth: "44px" }}
-                            title="Delete transaction"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        
+                      </div>
+                      <div className="d-flex align-items-center gap-2 flex-shrink-0">
+                        <div className={cn("fw-bold tabular-nums fs-6 text-nowrap", isIncome ? "text-success" : "text-danger")}>
+                          {isIncome ? "+" : "-"}{formatCurrency(t.amount)}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(t)}
+                          className="btn btn-sm btn-link text-danger p-1 d-flex align-items-center justify-content-center"
+                          style={{ minHeight: "44px", minWidth: "44px" }}
+                          title="Delete transaction"
+                          aria-label="Delete transaction"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </motion.div>
                   </motion.div>
