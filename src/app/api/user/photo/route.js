@@ -4,7 +4,7 @@ import User from "@/models/User";
 import { getSessionUserId } from "@/lib/auth";
 import cloudinary from "@/lib/cloudinary";
 
-const MAX_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_BYTES = 4 * 1024 * 1024; // 4MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function POST(request) {

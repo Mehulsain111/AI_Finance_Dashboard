@@ -22,6 +22,11 @@ export default function ProfileMenu() {
     setError("");
     setUploading(true);
     try {
+      // Vercel Serverless limits payload size to ~4.5MB. We cap at 4MB to be safe.
+      if (file.size > 4 * 1024 * 1024) {
+        throw new Error("File too large. Please select an image under 4MB.");
+      }
+
       const formData = new FormData();
       formData.append("photo", file);
       const res = await fetch("/api/user/photo", { method: "POST", body: formData });
