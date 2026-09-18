@@ -38,11 +38,12 @@ function SummaryCard({ label, value, sub, tone = "neutral", icon: Icon, onEdit, 
       </div>
 
       <div className="d-flex align-items-center justify-content-between mb-3">
-        <div className="small text-body-secondary fw-semibold text-uppercase app-kpi-label d-flex align-items-center gap-2">
+        <div className="small text-body-secondary fw-semibold text-uppercase app-kpi-label d-flex align-items-center flex-wrap gap-2">
           {label}
           {onEdit && !isEditing && (
-            <button onClick={onEdit} className="btn btn-link p-2 text-body-secondary ms-1 d-flex align-items-center justify-content-center" style={{ minHeight: "44px", minWidth: "44px" }} title="Edit Total Balance">
-              <Edit2 size={16} />
+            <button onClick={onEdit} className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 ms-1 px-2 py-1 rounded-pill" title="Edit Total Balance">
+              <Edit2 size={14} />
+              <span>Edit</span>
             </button>
           )}
         </div>
